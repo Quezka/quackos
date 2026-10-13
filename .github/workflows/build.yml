@@ -86,11 +86,18 @@ jobs:
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 xorriso
-          sudo scripts/boot-test.sh out/quackos-*-amd64.iso
+          sudo BOOT_LOG_OUT="$PWD/boot-serial.log" scripts/boot-test.sh out/quackos-*-amd64.iso
       - name: Desktop screenshots and debug report
-        if: env.RELEASE_BUILD == 'true' || github.event_name == 'workflow_dispatch'
+        # also when the text boot test failed: the picture shows what the desktop was doing
+        if: always() && (env.RELEASE_BUILD == 'true' || github.event_name == 'workflow_dispatch') && hashFiles('out/*.iso') != ''
         continue-on-error: true
         run: sudo scripts/desktop-test.sh out/quackos-*-amd64.iso desktop-shots
+      - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('boot-serial.log') != ''
+        with:
+          name: QuackOS-boot-serial-log
+          retention-days: 7
+          path: boot-serial.log
       - uses: actions/upload-artifact@v4
         if: always() && hashFiles('desktop-shots/*') != ''
         with:
