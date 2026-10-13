@@ -38,12 +38,14 @@ Chromium. Insieme a KDE la ISO si avvicina a **2 GiB**, che è il limite dei fil
 **divide** la ISO in parti se serve (si ricompone con `cat`). Se vuoi restare sotto: togliere pacchetti da
 `desktop.list.chroot` o le app meno usate dalla lista.
 
+## Cosa è verificato
+
+In CI (13 ottobre 2026): la ISO si costruisce in un container Debian 13 (circa 15 minuti, filesystem 1,78 GB, ISO 1,9 GiB), la suite arriva dalle release con checksum verificato, e l'immagine **parte in QEMU fino al login testuale** con il banner «QuackOS 0.1.0».
+
 ## Cosa NON è verificato (onestà)
 
-- La ISO non è mai stata costruita né avviata dall'autore di questo codice: manca root, spazio e un ambiente Debian 13.
-  La CI è il primo vero banco di prova, e probabilmente ci vorranno alcuni giri per sistemare i dettagli.
-- Nomi esatti di pacchetti Debian 13 (`policykit-1`, `task-*-kde-desktop`, `calamares-settings-debian`…) e opzioni di
-  `lb config` sono scritti dalla documentazione, non provati.
+- Il **desktop grafico** (SDDM, KDE, sfondo, splash Plymouth), **Calamares** che installa davvero e le app che si aprono
+  dentro la distro: il test di avvio si ferma al login testuale.
 - Lo sfondo di default di Plasma ("Next") viene sostituito sovrascrivendo i suoi file (`0200-quackos-artwork`): se
   Plasma cambia nome o struttura, resta lo sfondo originale e non si rompe nulla.
 - Il test di avvio in QEMU controlla solo il login testuale; non guarda il desktop grafico.

@@ -47,5 +47,5 @@ Utente live: `quack`, password `live`. Dal desktop: **Installa QuackOS**.
 
 ## Stato
 
-0.1.0: definizione dell'immagine, grafica, installer e suite scritti e controllati con test statici. **La ISO non è
-ancora mai stata costruita né avviata su un computer vero**: il primo giro lo fa la CI.
+0.1.0: la ISO si costruisce in CI e **parte in QEMU fino al login** (banner «QuackOS 0.1.0»). Il desktop grafico e
+l'installer Calamares non sono ancora stati verificati.

@@ -83,7 +83,7 @@ jobs:
           size=$(stat -c %s "$iso")
           files=("$iso" "$iso.sha256")
           # GitHub release assets are limited to 2 GiB: split bigger images, they join back with cat.
-          if [ "$size" -gt 2000000000 ]; then
+          if [ "$size" -gt 2140000000 ]; then
             split -d -b 1900M "$iso" "$iso.part"
             rm "$iso"
             files=("$iso".part* "$iso.sha256")
