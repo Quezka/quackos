@@ -47,5 +47,10 @@ class AppearanceTest(unittest.TestCase):
     def test_double_click_like_macos(self):
         self.assertEqual(ini("etc", "skel", ".config", "kdeglobals")["KDE"]["SingleClick"], "false")
 
+    def test_blur_is_on(self):
+        kwin = ini("etc", "xdg", "kwinrc")
+        self.assertEqual(kwin["Plugins"]["blurEnabled"], "true")
+        self.assertIn("BlurStrength", kwin["Effect-blur"])
+
 if __name__ == "__main__":
     unittest.main()
