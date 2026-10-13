@@ -99,7 +99,19 @@ comporta con il dual boot con Windows.
 
 Il partizionamento è il passo che può cancellare dati: leggi bene cosa propone Calamares prima di confermare.
 
-## 6. Primo avvio e aggiornamenti
+## 6. Dischi e partizioni Windows (NTFS)
+
+Il supporto NTFS di QuackOS è in lavorazione e **non è verificato**: leggere e scrivere le partizioni Windows
+potrebbe non funzionare ancora come descritto qui. Cose valide con qualsiasi Linux:
+
+- Prima di montare una partizione Windows **in scrittura**, in Windows disattiva **Avvio rapido** (Fast Startup:
+  Pannello di controllo → Opzioni risparmio energia → «Specifica comportamento dei pulsanti di alimentazione») e non
+  usare l'**ibernazione**. Con Avvio rapido «Arresta» non spegne davvero il disco: lo lascia in stato di ibernazione
+  e scriverci da Linux può corromperlo; di solito Linux lo monta solo in lettura o rifiuta di montarlo.
+- Per spegnere del tutto Windows usa «Riavvia», oppure `shutdown /s /f /t 0` da un prompt dei comandi.
+- Fai un backup prima di scrivere su un disco Windows per la prima volta.
+
+## 7. Primo avvio e aggiornamenti
 
 - Nel sistema installato accedi con l'utente e la password che hai scelto in Calamares (non `quack`/`live`).
 - Apri un terminale e scrivi `quack` per il «rapporto dello stagno».
