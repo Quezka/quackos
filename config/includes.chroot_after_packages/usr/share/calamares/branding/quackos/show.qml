@@ -6,7 +6,7 @@ Presentation {
 
     Timer {
         interval: 6000
-        running: true
+        running: presentation.activatedInCalamares
         repeat: true
         onTriggered: presentation.goToNextSlide()
     }
@@ -50,5 +50,13 @@ Presentation {
                 text: "Type  quack  in a terminal\nfor the pond report."
             }
         }
+    }
+
+    // API 2: the show is loaded when Calamares starts and these are called around the install step.
+    function onActivate() {
+        presentation.currentSlide = 0
+    }
+
+    function onLeave() {
     }
 }

@@ -1,16 +1,24 @@
 # QuackOS splash: dark indigo gradient, the logo, and a progress bar underneath.
+# Callbacks follow plymouth-themes' "script" example (Debian 13, plymouth 24.004.60-5).
 Window.SetBackgroundTopColor(0.08, 0.08, 0.18);
 Window.SetBackgroundBottomColor(0.28, 0.28, 0.68);
 
+# Window.GetX/GetY matter on multi-monitor setups (each head has its own origin).
+screen.x = Window.GetX();
+screen.y = Window.GetY();
+screen.w = Window.GetWidth();
+screen.h = Window.GetHeight();
+
 logo.image = Image("logo.png");
 logo.sprite = Sprite(logo.image);
-logo.sprite.SetX(Window.GetWidth() / 2 - logo.image.GetWidth() / 2);
-logo.sprite.SetY(Window.GetHeight() / 2 - logo.image.GetHeight() / 2 - 40);
+logo.x = screen.x + screen.w / 2 - logo.image.GetWidth() / 2;
+logo.y = screen.y + screen.h / 2 - logo.image.GetHeight() / 2 - 40;
+logo.sprite.SetPosition(logo.x, logo.y, 0);
 
 bar.bg = Image("bar-bg.png");
 bar.fill = Image("bar-fill.png");
-bar.x = Window.GetWidth() / 2 - bar.bg.GetWidth() / 2;
-bar.y = Window.GetHeight() / 2 + logo.image.GetHeight() / 2 + 10;
+bar.x = screen.x + screen.w / 2 - bar.bg.GetWidth() / 2;
+bar.y = logo.y + logo.image.GetHeight() + 24;
 bar.bg_sprite = Sprite(bar.bg);
 bar.bg_sprite.SetPosition(bar.x, bar.y, 1);
 bar.fill_sprite = Sprite();
@@ -22,3 +30,44 @@ fun boot_progress(time, progress) {
     bar.fill_sprite.SetImage(bar.fill.Scale(width, bar.fill.GetHeight()));
 }
 Plymouth.SetBootProgressFunction(boot_progress);
+
+# Disk passphrase prompt (encrypted installs). Without these callbacks the script plugin shows nothing
+# and the user would be typing a passphrase blind.
+pw.prompt_sprite = Sprite();
+pw.bullets_sprite = Sprite();
+
+fun display_normal_callback() {
+    pw.prompt_sprite.SetOpacity(0);
+    pw.bullets_sprite.SetOpacity(0);
+}
+
+fun display_password_callback(prompt, bullets) {
+    stars = " ";
+    for (i = 0; i < bullets; i++) stars = stars + "*";
+    prompt_image = Image.Text(prompt, 1, 1, 1);
+    bullets_image = Image.Text(stars, 1, 1, 1);
+    pw.prompt_sprite.SetImage(prompt_image);
+    pw.bullets_sprite.SetImage(bullets_image);
+    pw.prompt_sprite.SetPosition(screen.x + screen.w / 2 - prompt_image.GetWidth() / 2, bar.y + 50, 10);
+    pw.bullets_sprite.SetPosition(screen.x + screen.w / 2 - bullets_image.GetWidth() / 2, bar.y + 80, 10);
+    pw.prompt_sprite.SetOpacity(1);
+    pw.bullets_sprite.SetOpacity(1);
+}
+
+Plymouth.SetDisplayNormalFunction(display_normal_callback);
+Plymouth.SetDisplayPasswordFunction(display_password_callback);
+
+# Boot messages (e.g. fsck), top-left like the example theme.
+message_sprite = Sprite();
+message_sprite.SetPosition(10, 10, 10000);
+
+fun display_message_callback(text) {
+    message_sprite.SetImage(Image.Text(text, 1, 1, 1));
+}
+
+fun hide_message_callback(text) {
+    message_sprite.SetOpacity(0);
+}
+
+Plymouth.SetDisplayMessageFunction(display_message_callback);
+Plymouth.SetHideMessageFunction(hide_message_callback);
