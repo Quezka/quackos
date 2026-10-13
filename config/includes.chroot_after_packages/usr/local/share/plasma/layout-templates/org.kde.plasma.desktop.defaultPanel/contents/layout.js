@@ -1,4 +1,14 @@
+// QuackOS, step 1 (macOS-like): a thin menu bar on top with the global menu, the tray and the clock.
+// The stock bottom panel stays as it is (launcher, pager, pinned tasks) so the desktop is complete.
+var bar = new Panel
+bar.location = "top"
+bar.height = 2 * Math.floor(gridUnit * 1.6 / 2)
+bar.floating = false
+bar.addWidget("org.kde.plasma.appmenu")
+bar.addWidget("org.kde.plasma.panelspacer")
+
 var panel = new Panel
+panel.location = "bottom"
 var panelScreen = panel.screen
 
 // No need to set panel.location as ShellCorona::addPanel will automatically pick one available edge
@@ -81,10 +91,10 @@ var langIds = ["as",    // Assamese
                "zh_TW"] // Traditional Chinese
 
 if (langIds.indexOf(languageId) != -1) {
-    panel.addWidget("org.kde.plasma.kimpanel");
+    bar.addWidget("org.kde.plasma.kimpanel");
 }
 
-panel.addWidget("org.kde.plasma.systemtray")
-panel.addWidget("org.kde.plasma.digitalclock")
+bar.addWidget("org.kde.plasma.systemtray")
+bar.addWidget("org.kde.plasma.digitalclock")
 panel.addWidget("org.kde.plasma.showdesktop")
 
