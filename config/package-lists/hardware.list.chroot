@@ -1,0 +1,12 @@
+# Real-laptop hardware (target: ThinkPad, Intel Core i5-6300U Skylake, Intel Wi-Fi/Bluetooth).
+# Sizes are the .deb Size from the trixie index (the squashfs grows by about that much).
+
+# i915 firmware for Skylake (skl_dmc_ver1_27.bin = display power states, skl_guc/huc). It is only a
+# *Recommends* of firmware-misc-nonfree, and apt-recommends is off, so it was NOT in the image. 6.4 MB.
+firmware-intel-graphics
+
+# Battery/power profiles in the Plasma power applet: powerdevil only *Recommends* it. 56 KB.
+power-profiles-daemon
+
+# Hardware video decode on Intel gen9+ (Skylake): VA-API driver "iHD". mesa-va-drivers does not cover Intel. 3.4 MB.
+intel-media-va-driver
