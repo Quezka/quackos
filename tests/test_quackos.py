@@ -60,6 +60,27 @@ class ImageDefinitionTest(unittest.TestCase):
                           "firefox-esr", "librsvg2-bin", "imagemagick", "jq", "curl", "python3-venv"):
             self.assertIn(essential, seen, essential)
 
+    def test_recommends_that_the_image_cannot_live_without_are_listed(self):
+        # The image is built with apt-recommends OFF, so anything that is only a Recommends of a package we
+        # install must be listed by hand. Each of these was once missing and broke something real:
+        listed = set()
+        for path in files("config/package-lists", ".list.chroot"):
+            listed |= {line.strip() for line in read(os.path.relpath(path, ROOT)).splitlines()
+                       if line.strip() and not line.startswith("#")}
+        must = {
+            "user-setup": "live-config creates the live user with it: without it, login says wrong password",
+            "keyboard-configuration": "live-config keyboard setup", "locales": "live-config locale setup",
+            "libpam-systemd": "SDDM / logind sessions", "dbus-user-session": "user sessions",
+            "kwin-wayland": "the default Plasma 6 session", "kwin-x11": "the X11 Plasma session (fallback)",
+            "xserver-xorg": "X11 sessions", "libgl1-mesa-dri": "Mesa: KWin cannot draw without it",
+            "libglx-mesa0": "Mesa GLX", "xwayland": "X11 apps under Wayland (Firefox, apps)",
+            "kscreen": "display settings", "powerdevil": "power management", "systemsettings": "KDE settings",
+            "firmware-linux": "firmware for real hardware", "firmware-iwlwifi": "Intel Wi-Fi",
+            "sudo": "live-config sudo setup",
+        }
+        for package, why in must.items():
+            self.assertIn(package, listed, "%s is missing (%s)" % (package, why))
+
     def test_suite_manifest(self):
         apps = {}
         for line in read("suite", "apps.list").splitlines():

@@ -1,7 +1,26 @@
 # KDE Plasma 6, kept lean so the ISO stays under GitHub's 2 GiB release-asset limit
 kde-plasma-desktop
+# Recommends of kde-plasma-desktop / plasma-desktop / plasma-workspace that a working desktop needs
+kwin-wayland
+kwin-x11
 sddm
 sddm-theme-breeze
+kscreen
+kde-config-sddm
+kde-config-screenlocker
+kde-config-gtk-style
+breeze-gtk-theme
+kio-extras
+kde-cli-tools
+systemsettings
+powerdevil
+bluedevil
+ksystemstats
+kinfocenter
+ksshaskpass
+xdg-desktop-portal-kde
+fonts-hack
+fonts-noto
 plasma-nm
 plasma-pa
 plasma-systemmonitor

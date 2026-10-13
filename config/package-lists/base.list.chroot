@@ -1,3 +1,13 @@
+# --- what live-config needs to CREATE the live user and log in ---
+# live-config only *Recommends* these; with apt-recommends off they must be listed or the user `quack` is never
+# created and the login says "wrong password".
+user-setup
+keyboard-configuration
+locales
+iproute2
+live-tools
+libpam-systemd
+dbus-user-session
 # --- system basics ---
 sudo
 polkitd
@@ -17,6 +27,23 @@ python3-venv
 python3-pip
 librsvg2-bin
 imagemagick
+# --- graphics: Mesa drivers, X server and input (Recommends of xserver-xorg-core and friends) ---
+libgl1-mesa-dri
+libglx-mesa0
+mesa-vulkan-drivers
+mesa-va-drivers
+xwayland
+xserver-xorg
+xserver-xorg-input-libinput
+# --- firmware for real hardware (Wi-Fi, GPUs, microcode) ---
+firmware-linux
+firmware-misc-nonfree
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-amd-graphics
+intel-microcode
+amd64-microcode
 # --- network, bluetooth, sound ---
 network-manager
 bluez
