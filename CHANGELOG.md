@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.1.2] - unreleased
+
+- macOS-like look: a thin menu bar on top with the global menu, a floating centred dock at the bottom (with the Quezka suite pinned and the trash), Inter as the interface font, Bibata cursors, window buttons on the left, blur. The first time it is seen on a screen is on real hardware: nothing in CI renders it.
+- Smaller ISO: live-build no longer auto-installs every firmware package (about 110 MB of switch, datacenter-GPU, server-NIC, TV-tuner and old Wi-Fi firmware nobody needs); the firmware we want is listed by hand, including Mediatek and Nvidia graphics.
+- The CI no longer boots the ISO in QEMU; it opens the image and checks 41 paths instead (`scripts/image-check.py`).
+- `server/quackos-pull.sh`, a systemd service and timer so the home server mirrors the release ISO from GitHub (`docs/server-mirror.md`), and `docs/runner-self-hosted.md` on why a self-hosted runner on a public repo is risky.
+- Hardware matrix (`docs/hardware.md`) and an ISO size report script.
+
 ## [0.1.1] - 2026-10-13
 
 - Fix: the live user `quack` was never created, so the login said "wrong password". `live-config` only *recommends* `user-setup`, and the image is built without recommends. The other recommended packages a working desktop needs are now listed too (Plasma sessions, Mesa, X.org, firmware, Wi-Fi, `squashfs-tools` for the installer...), and the CI boot test fails if the user, the autologin or the installer tools are missing.
