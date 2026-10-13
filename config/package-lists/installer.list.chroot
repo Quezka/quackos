@@ -5,8 +5,14 @@ grub-efi-amd64
 grub-pc-bin
 efibootmgr
 shim-signed
+grub-efi-amd64-signed
 os-prober
 cryptsetup
 dosfstools
 e2fsprogs
 btrfs-progs
+# Calamares only *Recommends* squashfs-tools (it unpacks the live filesystem with it: no squashfs-tools, no install),
+# and Debian's launcher (calamares-install-debian) needs xhost and rsync.
+squashfs-tools
+rsync
+x11-xserver-utils

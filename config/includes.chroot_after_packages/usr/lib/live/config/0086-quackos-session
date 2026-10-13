@@ -1,0 +1,39 @@
+#!/bin/sh
+# live-config component "quackos-session": log the live user into the X11 Plasma session.
+#
+# live-config's own sddm component (0085) writes "Session=plasma.desktop", which in Plasma 6 is the WAYLAND
+# session. X11 works on far more hardware (old GPUs, VMs, odd drivers), and a live image that does not reach the
+# desktop is worthless, so QuackOS defaults to X11. Boot with `quackos.wayland` to keep the Wayland session.
+. /usr/lib/live/config.sh
+
+Cmdline ()
+{
+	for _PARAMETER in ${LIVE_CONFIG_CMDLINE}
+	do
+		case "${_PARAMETER}" in
+			quackos.wayland)
+				QUACKOS_WAYLAND="true"
+				;;
+		esac
+	done
+}
+
+Init ()
+{
+	if [ "${QUACKOS_WAYLAND}" = "true" ] || [ ! -f /etc/sddm.conf ] || component_was_executed "quackos-session"
+	then
+		exit 0
+	fi
+
+	echo -n " quackos-session"
+}
+
+Config ()
+{
+	sed -i 's/^Session=plasma\.desktop$/Session=plasmax11.desktop/' /etc/sddm.conf
+	touch /var/lib/live/config/quackos-session
+}
+
+Cmdline
+Init
+Config

@@ -7,7 +7,37 @@ on:
   pull_request:
   workflow_dispatch:
 
+# A newer push to the same branch makes an older, still running build pointless.
+concurrency:
+  group: build-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
+  changes:
+    # Building the ISO takes minutes: only do it when something that ends up in the image changed.
+    runs-on: ubuntu-latest
+    outputs:
+      image: ${{ steps.f.outputs.image }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - id: f
+        run: |
+          before="${{ github.event.before }}"
+          if [ "${{ github.event_name }}" != push ] || [[ "$GITHUB_REF" == refs/tags/* ]] \
+             || [ -z "$before" ] || [ "$before" = 0000000000000000000000000000000000000000 ] \
+             || ! git cat-file -e "$before" 2>/dev/null; then
+            echo "image=true" >> "$GITHUB_OUTPUT"; exit 0
+          fi
+          if git diff --name-only "$before" "${{ github.sha }}" \
+               | grep -qE '^(config/|auto/|suite/|scripts/|build\.sh|VERSION|\.github/workflows/)'; then
+            echo "image=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "image=false" >> "$GITHUB_OUTPUT"
+            echo "Only docs or tests changed: skipping the ISO build."
+          fi
+
   static:
     runs-on: ubuntu-latest
     steps:
@@ -21,9 +51,14 @@ jobs:
       - run: shellcheck -S warning build.sh auto/config auto/build auto/clean scripts/boot-test.sh scripts/desktop-test.sh config/hooks/live/*.chroot config/includes.chroot_after_packages/usr/local/bin/quack
 
   iso:
-    needs: static
+    # Runs in parallel with `static`. Release (tag) builds use xz for the smallest ISO; test builds use gzip,
+    # which is about 4 minutes faster.
+    needs: changes
+    if: needs.changes.outputs.image == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 120
+    env:
+      RELEASE_BUILD: ${{ startsWith(github.ref, 'refs/tags/v') }}
     steps:
       - uses: actions/checkout@v4
       - name: Free disk space (the build needs about 15 GB)
@@ -34,7 +69,11 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
-          docker run --rm --privileged -e GITHUB_TOKEN -v "$PWD":/work -w /work debian:trixie bash -c '
+          compression=gzip
+          [ "$RELEASE_BUILD" = true ] && compression=xz
+          echo "squashfs compression: $compression"
+          docker run --rm --privileged -e GITHUB_TOKEN -e QUACKOS_COMPRESSION="$compression" \
+            -v "$PWD":/work -w /work debian:trixie bash -c '
             set -euo pipefail
             apt-get update
             apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso \
@@ -43,12 +82,13 @@ jobs:
           '
           sudo chown -R "$USER": out
           ls -lh out
-      - name: Boot the ISO in QEMU
+      - name: Boot the ISO in QEMU (and check the live user exists)
         run: |
           sudo apt-get update
           sudo apt-get install -y qemu-system-x86 xorriso
           sudo scripts/boot-test.sh out/quackos-*-amd64.iso
       - name: Desktop screenshots and debug report
+        if: env.RELEASE_BUILD == 'true' || github.event_name == 'workflow_dispatch'
         continue-on-error: true
         run: sudo scripts/desktop-test.sh out/quackos-*-amd64.iso desktop-shots
       - uses: actions/upload-artifact@v4
@@ -58,7 +98,8 @@ jobs:
           retention-days: 7
           path: desktop-shots/*
       - uses: actions/upload-artifact@v4
-        if: always() && hashFiles('out/*.iso') != ''     # keep the image even if the boot test failed
+        # The 2 GB image is only uploaded when someone needs it: a release (tag) or a manual run.
+        if: always() && hashFiles('out/*.iso') != '' && (env.RELEASE_BUILD == 'true' || github.event_name == 'workflow_dispatch')
         with:
           name: QuackOS-ISO
           retention-days: 7
@@ -67,7 +108,7 @@ jobs:
 
   release:
     # Pushing a tag like v0.1.0 publishes that version's ISO.
-    needs: iso
+    needs: [static, iso]
     if: startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:

@@ -35,7 +35,8 @@ class ImageDefinitionTest(unittest.TestCase):
 
     def test_scripts_are_executable_and_parse(self):
         scripts = ([os.path.join(ROOT, "build.sh")] + files("auto") + files("config/hooks")
-                   + [os.path.join(INC, "usr", "local", "bin", "quack")] + files("config/includes.chroot_after_packages/lib/live/config"))
+                   + [os.path.join(INC, "usr", "local", "bin", "quack"), os.path.join(INC, "usr", "local", "lib", "quackos", "debug-report")]
+                   + files("config/includes.chroot_after_packages/usr/lib/live/config") + files("scripts", ".sh"))
         for path in scripts:
             self.assertTrue(os.stat(path).st_mode & stat.S_IXUSR, path + " is not executable")
             self.assertEqual(subprocess.run(["bash", "-n", path]).returncode, 0, path)
@@ -77,9 +78,41 @@ class ImageDefinitionTest(unittest.TestCase):
             "kscreen": "display settings", "powerdevil": "power management", "systemsettings": "KDE settings",
             "firmware-linux": "firmware for real hardware", "firmware-iwlwifi": "Intel Wi-Fi",
             "sudo": "live-config sudo setup",
+            "squashfs-tools": "Calamares unpacks the live filesystem with unsquashfs: without it nothing installs",
+            "rsync": "Debian's Calamares wrapper", "x11-xserver-utils": "xhost, used by calamares-install-debian",
+            "wpasupplicant": "WPA Wi-Fi in NetworkManager", "systemd-timesyncd": "the clock",
         }
         for package, why in must.items():
             self.assertIn(package, listed, "%s is missing (%s)" % (package, why))
+
+    def test_image_tree_does_not_clobber_the_usrmerge_symlinks(self):
+        # In Debian 13 /lib, /bin, /sbin and /lib64 are symlinks into /usr: a real directory with one of those names
+        # in the include tree would replace the symlink and break the whole system.
+        for name in ("lib", "lib64", "bin", "sbin"):
+            self.assertFalse(os.path.exists(os.path.join(INC, name)), "includes/%s would clobber the /%s symlink" % (name, name))
+
+    def test_live_session_defaults_to_x11(self):
+        script = read("config", "includes.chroot_after_packages", "usr", "lib", "live", "config", "0086-quackos-session")
+        self.assertIn(". /usr/lib/live/config.sh", script)
+        self.assertIn("quackos.wayland", script)
+        # run the very sed the script uses on what live-config's 0085-sddm writes
+        command = re.search(r"sed -i '([^']+)' /etc/sddm\.conf", script).group(1)
+        written = "[Autologin]\nUser=quack\nSession=plasma.desktop\n"
+        out = subprocess.run(["sed", command], input=written, capture_output=True, text=True).stdout
+        self.assertEqual(out, "[Autologin]\nUser=quack\nSession=plasmax11.desktop\n")
+        # and it must run AFTER live-config's own sddm component
+        self.assertGreater("0086-quackos-session", "0085-sddm")
+
+    def test_installer_launcher_replaces_debians(self):
+        # Debian's calamares-desktop-icon autostart copies this exact file to the live desktop
+        path = os.path.join("config", "includes.chroot_after_packages", "usr", "share", "applications",
+                            "calamares-install-debian.desktop")
+        text = read(path)
+        self.assertIn("Name=Install QuackOS", text)
+        self.assertIn("Exec=calamares-install-debian", text)       # Debian's wrapper: sudo + xhost + pkexec
+        self.assertIn("Icon=quackos", text)
+        self.assertNotIn("pkexec /usr/bin/calamares", text)
+        self.assertIn("/usr/share/icons/hicolor/scalable/apps/quackos.svg", read("config", "hooks", "live", "0200-quackos-artwork.hook.chroot"))
 
     def test_suite_manifest(self):
         apps = {}

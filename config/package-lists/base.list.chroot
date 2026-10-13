@@ -9,6 +9,7 @@ live-tools
 libpam-systemd
 dbus-user-session
 # --- system basics ---
+ntfs-3g
 sudo
 polkitd
 pkexec
@@ -46,6 +47,9 @@ intel-microcode
 amd64-microcode
 # --- network, bluetooth, sound ---
 network-manager
+wpasupplicant
+wireless-regdb
+systemd-timesyncd
 bluez
 pipewire-audio
 wireplumber

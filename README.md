@@ -38,7 +38,8 @@ ISO sulle release quando si crea un tag `vX.Y.Z`.
 
 ## Provarla
 
-Utente live: `quack`, password `live`. Dal desktop: **Installa QuackOS**.
+Utente live: `quack`, password `live` (di solito entra da solo, con l'accesso automatico). Sessione Plasma su **X11**
+(`quackos.wayland` sulla riga di avvio per Wayland). Dal desktop: **Installa QuackOS**.
 
 ## Documentazione
 

@@ -31,6 +31,20 @@ sola transazione `apt` (le dipendenze condivise si risolvono insieme).
 Per aggiungere un'app: una riga in `suite/apps.list`. Il `.deb` deve chiamarsi come previsto dalla regex.
 Fuori per ora: Cairn, Bastion e Marginalia (server o progetti locali senza release installabile).
 
+## Lezioni (cose che sono andate storte davvero)
+
+- **La build usa `--apt-recommends false`**, per tenere piccola la ISO. Ma molti pacchetti hanno come *Recommends* cose
+  indispensabili: `live-config` → `user-setup` (senza, l'utente live non esiste: «password errata»), `xserver-xorg-core` →
+  Mesa, `kde-plasma-desktop` → `kwin-wayland`/`kwin-x11`, `sddm` → `libpam-systemd`, `calamares` → `squashfs-tools`,
+  `network-manager` → `wpasupplicant`. Ognuno è elencato a mano, e `tests/test_quackos.py` impedisce di toglierli.
+- **Un banner di login non prova che si possa entrare**: il test di avvio ora controlla anche che l'utente `quack` esista,
+  che l'autologin sia impostato e che gli strumenti dell'installer ci siano.
+- **Wayland o X11**: `live-config` sceglie la sessione `plasma.desktop`, che in Plasma 6 è Wayland. La live usa X11 (più
+  compatibile con hardware vecchio); `quackos.wayland` sulla riga di avvio riporta Wayland.
+- **L'installer**: Debian ha già `calamares-install-debian` (sudo + xhost + pkexec) e un'icona automatica «Install Debian»;
+  noi sostituiamo il suo `.desktop`. Non mettere cartelle `lib/`, `bin/`, `sbin/` nell'albero dei file: in Debian 13 sono
+  link simbolici verso `/usr` e li romperebbero.
+
 ## Dimensione
 
 Ogni app della suite porta il proprio Qt (sono PyInstaller): ~55 MB compressi l'una, Stagno 168 MB perché include
@@ -40,7 +54,7 @@ Chromium. Insieme a KDE la ISO si avvicina a **2 GiB**, che è il limite dei fil
 
 ## Cosa è verificato
 
-In CI (13 ottobre 2026): la ISO si costruisce in un container Debian 13 (circa 15 minuti, filesystem 1,78 GB, ISO 1,9 GiB), la suite arriva dalle release con checksum verificato, e l'immagine **parte in QEMU fino al login testuale** con il banner «QuackOS 0.1.0».
+In CI (13 ottobre 2026, v0.1.0): la ISO si costruisce in un container Debian 13 (circa 15 minuti, filesystem 1,78 GB, ISO 1,9 GiB), la suite arriva dalle release con checksum verificato, e l'immagine **parte in QEMU fino al login testuale** con il banner «QuackOS 0.1.0».
 
 ## Cosa NON è verificato (onestà)
 

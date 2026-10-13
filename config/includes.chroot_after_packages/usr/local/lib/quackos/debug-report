@@ -1,7 +1,8 @@
 #!/bin/bash
 # Prints what is going on with the graphical session to the console. Runs only when the kernel command line
 # contains "quackos.debug" (the CI desktop test passes it), so it does nothing on a normal boot.
-sleep "${QUACKOS_DEBUG_DELAY:-100}"
+delay="$(sed -n 's/.*quackos\.debug_delay=\([0-9][0-9]*\).*/\1/p' /proc/cmdline)"
+sleep "${delay:-100}"
 section() { printf '\n===== %s =====\n' "$1"; }
 section "QUACKOS DEBUG REPORT"
 section "failed units";        systemctl --failed --no-pager --plain
@@ -13,5 +14,6 @@ section "sessions";            loginctl list-sessions --no-pager 2>&1
 section "installed sessions";  ls -1 /usr/share/wayland-sessions /usr/share/xsessions 2>&1
 section "graphical processes"; ps -eo pid,user,comm | grep -E "sddm|plasma|kwin|Xorg|Xwayland|startplasma" | head -20
 section "user quack";          id quack 2>&1; grep -E "^quack:" /etc/passwd
+section "installer tools"; for c in unsquashfs xhost rsync pkexec calamares calamares-install-debian; do command -v "$c" >/dev/null && echo "found: $c" || echo "MISSING: $c"; done
 section "sddm config";         cat /etc/sddm.conf /etc/sddm.conf.d/* 2>&1 | head -40
 section "END OF REPORT"

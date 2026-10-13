@@ -16,11 +16,11 @@ accel=tcg; [ -w /dev/kvm ] && accel=kvm
 
 qemu-system-x86_64 -accel "$accel" -m 4096 -smp 2 -vga virtio -display none -no-reboot \
     -cdrom "$iso" -kernel "$kernel" -initrd "$initrd" \
-    -append "boot=live components quiet splash username=quack hostname=quackos locales=it_IT.UTF-8 keyboard-layouts=it console=ttyS0 quackos.debug" \
+    -append "boot=live components quiet splash username=quack hostname=quackos locales=it_IT.UTF-8 keyboard-layouts=it console=ttyS0 quackos.debug quackos.debug_delay=60" \
     -serial "file:$out/serial.log" -qmp "unix:$work/qmp.sock,server,nowait" &
 qemu=$!
 
-python3 "$(dirname "$0")/qemu_screenshot.py" "$work/qmp.sock" "$out/screen" 20 60 120 180 240 || true
+python3 "$(dirname "$0")/qemu_screenshot.py" "$work/qmp.sock" "$out/screen" 20 60 120 || true
 sleep 5
 kill "$qemu" 2>/dev/null || true
 wait "$qemu" 2>/dev/null || true

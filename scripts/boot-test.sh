@@ -18,11 +18,11 @@ echo "booting with $accel"
 log="$work/serial.log"
 timeout 600 qemu-system-x86_64 -accel "$accel" -m 3072 -smp 2 -display none -no-reboot \
     -cdrom "$iso" -kernel "$kernel" -initrd "$initrd" \
-    -append "boot=live components username=quack hostname=quackos console=ttyS0 quackos.debug systemd.unit=multi-user.target" \
+    -append "boot=live components username=quack hostname=quackos console=ttyS0 quackos.debug quackos.debug_delay=25 systemd.unit=multi-user.target" \
     -serial "file:$log" &
 qemu=$!
 
-# The image prints a debug report (quackos.debug) about 100 s after boot: wait for it, it tells us whether
+# The image prints a debug report (quackos.debug) about 25 s after boot: wait for it, it tells us whether
 # the live user was really created. A login banner alone proved nothing (it was there while `quack` was missing).
 ok=0
 for _ in $(seq 1 120); do
@@ -38,5 +38,8 @@ if [ "$ok" -ne 1 ]; then echo "FAIL: the system never printed its debug report (
 grep -q "login:" "$log" || { echo "FAIL: no login prompt" >&2; exit 1; }
 grep -q "QuackOS" "$log" || { echo "FAIL: the login banner does not say QuackOS" >&2; exit 1; }
 grep -q "uid=1000(quack)" "$log" || { echo "FAIL: the live user 'quack' was not created, so nobody could log in" >&2; exit 1; }
+grep -q "MISSING:" "$log" && { echo "FAIL: tools the installer needs are missing:" >&2; grep "MISSING:" "$log" >&2; exit 1; }
+grep -q "^Session=plasmax11.desktop" "$log" || { echo "FAIL: the live autologin is not set to the X11 Plasma session" >&2; exit 1; }
+grep -q "^User=quack" "$log" || { echo "FAIL: autologin is not set for quack" >&2; exit 1; }
 grep -q "^quack:" "$log" || { echo "FAIL: no passwd entry for quack" >&2; exit 1; }
 echo "OK: booted to a QuackOS login prompt and the live user 'quack' exists"

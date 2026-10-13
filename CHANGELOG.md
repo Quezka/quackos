@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.1] - 2026-10-13
+
+- Fix: the live user `quack` was never created, so the login said "wrong password". `live-config` only *recommends* `user-setup`, and the image is built without recommends. The other recommended packages a working desktop needs are now listed too (Plasma sessions, Mesa, X.org, firmware, Wi-Fi, `squashfs-tools` for the installer...), and the CI boot test fails if the user, the autologin or the installer tools are missing.
+- The live session now logs into Plasma on **X11** (works on much more hardware than Wayland); boot with `quackos.wayland` to get Wayland.
+- The "Install QuackOS" icon now uses Debian's own Calamares launcher (the old one could not open a window), branded as QuackOS.
+- Faster CI: gzip compression for test builds (xz only for releases), jobs run in parallel, docs-only changes skip the ISO build.
+
 ## [0.1.0] - 2026-10-13
 
 - First definition of QuackOS: Debian 13 + KDE Plasma 6 live image (live-build), Calamares installer, QuackOS identity,
