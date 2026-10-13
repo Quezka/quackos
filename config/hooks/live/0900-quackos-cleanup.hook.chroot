@@ -2,7 +2,6 @@
 # Last step: leave the image tidy and smaller.
 set -euo pipefail
 systemctl enable sddm.service NetworkManager.service 2>/dev/null || true
-systemctl enable quackos-debug.service
 update-initramfs -u
 apt-get clean
 rm -rf /var/lib/apt/lists/* /tmp/* /root/.cache

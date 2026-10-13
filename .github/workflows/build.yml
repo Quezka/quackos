@@ -48,7 +48,7 @@ jobs:
       - run: sudo apt-get update && sudo apt-get install -y shellcheck desktop-file-utils
       - run: python -m unittest discover -s tests -v
       - run: python scripts/check-packages.py
-      - run: shellcheck -S warning build.sh auto/config auto/build auto/clean scripts/boot-test.sh scripts/desktop-test.sh config/hooks/live/*.chroot config/includes.chroot_after_packages/usr/local/bin/quack
+      - run: shellcheck -S warning build.sh auto/config auto/build auto/clean config/hooks/live/*.chroot config/includes.chroot_after_packages/usr/local/bin/quack
 
   iso:
     # Runs in parallel with `static`. Release (tag) builds use xz for the smallest ISO; test builds use gzip,
@@ -82,28 +82,11 @@ jobs:
           '
           sudo chown -R "$USER": out
           ls -lh out
-      - name: Boot the ISO in QEMU (and check the live user exists)
+      - name: Check what is inside the image (no boot needed)
         run: |
           sudo apt-get update
-          sudo apt-get install -y qemu-system-x86 xorriso
-          sudo BOOT_LOG_OUT="$PWD/boot-serial.log" scripts/boot-test.sh out/quackos-*-amd64.iso
-      - name: Desktop screenshots and debug report
-        # also when the text boot test failed: the picture shows what the desktop was doing
-        if: always() && (env.RELEASE_BUILD == 'true' || github.event_name == 'workflow_dispatch') && hashFiles('out/*.iso') != ''
-        continue-on-error: true
-        run: sudo scripts/desktop-test.sh out/quackos-*-amd64.iso desktop-shots
-      - uses: actions/upload-artifact@v4
-        if: always() && hashFiles('boot-serial.log') != ''
-        with:
-          name: QuackOS-boot-serial-log
-          retention-days: 7
-          path: boot-serial.log
-      - uses: actions/upload-artifact@v4
-        if: always() && hashFiles('desktop-shots/*') != ''
-        with:
-          name: QuackOS-desktop-shots
-          retention-days: 7
-          path: desktop-shots/*
+          sudo apt-get install -y squashfs-tools xorriso
+          sudo python3 scripts/image-check.py out/quackos-*-amd64.iso
       - uses: actions/upload-artifact@v4
         # The 2 GB image is only uploaded when someone needs it: a release (tag) or a manual run.
         if: always() && hashFiles('out/*.iso') != '' && (env.RELEASE_BUILD == 'true' || github.event_name == 'workflow_dispatch')

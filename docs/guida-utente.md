@@ -142,4 +142,4 @@ Cose da sapere con qualsiasi Linux:
 
 Più informazioni dai, più facile è: versione di QuackOS, hardware o macchina virtuale, cosa hai provato, cosa è
 successo, e se sei in live o su sistema installato. Se il sistema live parte, nel terminale puoi allegare l'output di
-`/usr/local/lib/quackos/debug-report` (se presente nella tua versione).
+`quack` (informazioni di sistema) e di `journalctl -b -p err --no-pager | tail -50` (gli errori di questo avvio).

@@ -4,6 +4,7 @@ import re
 import shutil
 import stat
 import subprocess
+import tempfile
 import unittest
 import xml.dom.minidom
 
@@ -35,7 +36,7 @@ class ImageDefinitionTest(unittest.TestCase):
 
     def test_scripts_are_executable_and_parse(self):
         scripts = ([os.path.join(ROOT, "build.sh")] + files("auto") + files("config/hooks")
-                   + [os.path.join(INC, "usr", "local", "bin", "quack"), os.path.join(INC, "usr", "local", "lib", "quackos", "debug-report")]
+                   + [os.path.join(INC, "usr", "local", "bin", "quack")]
                    + files("config/includes.chroot_after_packages/usr/lib/live/config") + files("scripts", ".sh"))
         for path in scripts:
             self.assertTrue(os.stat(path).st_mode & stat.S_IXUSR, path + " is not executable")
@@ -270,6 +271,44 @@ class FetchSuiteTest(unittest.TestCase):
     def test_refuses_a_release_without_the_file(self):
         with self.assertRaises(self.mod.SuiteError):
             self.mod.pick_asset(self.release(), self.mod.re.compile(r"^nothing$"))
+
+
+class ImageCheckTest(unittest.TestCase):
+    """scripts/image-check.py on a fake `unsquashfs -ll` listing (no ISO needed)."""
+
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("image_check", os.path.join(ROOT, "scripts", "image-check.py"))
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def listing(self, paths):
+        return "\n".join("-rwxr-xr-x root/root 1024 2026-10-13 10:00 squashfs-root/%s" % p for p in paths)
+
+    def test_a_complete_image_passes(self):
+        paths = self.mod.paths_from_listing(self.listing(self.mod.MUST_EXIST))
+        self.assertEqual(self.mod.check(paths, None), [])
+
+    def test_each_missing_file_is_reported_with_its_reason(self):
+        paths = self.mod.paths_from_listing(self.listing(self.mod.MUST_EXIST))
+        paths.discard("usr/lib/user-setup/user-setup-apply")
+        failures = self.mod.check(paths, None)
+        self.assertEqual(len(failures), 1)
+        self.assertIn("wrong password", failures[0])
+
+    def test_unwanted_files_are_reported(self):
+        paths = self.mod.paths_from_listing(self.listing(list(self.mod.MUST_EXIST) + ["usr/share/wallpapers/Altai/metadata.json"]))
+        self.assertTrue(any("Altai" in f for f in self.mod.check(paths, None)))
+
+    def test_symlinks_in_the_listing_are_understood(self):
+        text = "lrwxrwxrwx root/root 20 2026-10-13 10:00 squashfs-root/usr/bin/firefox-esr -> /usr/lib/firefox-esr/firefox-esr"
+        self.assertIn("usr/bin/firefox-esr", self.mod.paths_from_listing(text))
+
+    def test_every_checked_path_is_relative_and_clean(self):
+        for path in list(self.mod.MUST_EXIST) + list(self.mod.MUST_NOT_EXIST):
+            self.assertFalse(path.startswith("/"), path)
+            self.assertNotIn("..", path)
 
 
 class QuackCommandTest(unittest.TestCase):

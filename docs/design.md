@@ -54,7 +54,12 @@ Chromium. Insieme a KDE la ISO si avvicina a **2 GiB**, che è il limite dei fil
 
 ## Cosa è verificato
 
-In CI (13 ottobre 2026, v0.1.0): la ISO si costruisce in un container Debian 13 (circa 15 minuti, filesystem 1,78 GB, ISO 1,9 GiB), la suite arriva dalle release con checksum verificato, e l'immagine **parte in QEMU fino al login testuale** con il banner «QuackOS 0.1.0».
+In CI (13 ottobre 2026): la ISO si costruisce in un container Debian 13 (circa 15 minuti, filesystem 1,78 GB, ISO 1,9 GiB), la suite arriva dalle release con checksum verificato, e l'immagine **parte in QEMU fino al login testuale** con il banner «QuackOS 0.1.0».
+
+La CI **non avvia più la ISO** (scelta dell'autore: si prova direttamente sull'hardware). Dopo la build, `scripts/image-check.py`
+apre la ISO senza avviarla e controlla che dentro ci siano i file che ci sono mancati (utente live, sessione X11, installer,
+sfondo, driver Mesa, le app). In una prova precedente in QEMU (non più nella CI) il desktop partiva con l'accesso automatico
+e la barra con le app fissate.
 
 ## Cosa NON è verificato (onestà)
 
