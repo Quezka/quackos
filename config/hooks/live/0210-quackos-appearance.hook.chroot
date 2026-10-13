@@ -1,0 +1,11 @@
+#!/bin/bash
+# Keeps two of the six Bibata cursor variants (black for the dark theme, white for light ones) to save image space.
+set -euo pipefail
+cd /usr/share/icons
+for d in Bibata-*; do
+    case "$d" in
+        Bibata-Modern-Classic|Bibata-Modern-Ice) ;;
+        *) rm -rf "$d" ;;
+    esac
+done
+test -d Bibata-Modern-Classic

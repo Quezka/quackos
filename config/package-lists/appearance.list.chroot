@@ -1,2 +1,4 @@
 # macOS-like look. fonts-inter: SIL OFL 1.1, 4.6 MB of .deb (Debian 13 fonts-inter 4.1+ds-1).
 fonts-inter
+# bibata-cursor-theme: GPL-3.0, 10.8 MB of .deb before the hook trims it (Debian 13 2.0.6-1).
+bibata-cursor-theme

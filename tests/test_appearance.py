@@ -27,5 +27,17 @@ class AppearanceTest(unittest.TestCase):
             self.assertTrue(g[key].startswith("Inter,"), key)
         self.assertEqual(ini("etc", "sddm.conf.d", "quackos.conf")["Theme"]["Font"], "Inter,10")
 
+    def test_cursor_theme_is_consistent(self):
+        self.assertIn("bibata-cursor-theme", packages("appearance.list.chroot"))
+        theme = ini("etc", "xdg", "kcminputrc")["Mouse"]["cursorTheme"]
+        self.assertEqual(theme, "Bibata-Modern-Classic")
+        self.assertEqual(ini("etc", "sddm.conf.d", "quackos.conf")["Theme"]["CursorTheme"], theme)
+
+    def test_hook_keeps_the_cursor_it_configures(self):
+        hook = os.path.join(ROOT, "config", "hooks", "live", "0210-quackos-appearance.hook.chroot")
+        with open(hook) as f:
+            self.assertIn("Bibata-Modern-Classic", f.read())
+        self.assertTrue(os.access(hook, os.X_OK))
+
 if __name__ == "__main__":
     unittest.main()
