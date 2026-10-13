@@ -1,0 +1,13 @@
+[Unit]
+Description=QuackOS debug report (only with quackos.debug on the kernel command line)
+ConditionKernelCommandLine=quackos.debug
+After=multi-user.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/lib/quackos/debug-report
+StandardOutput=tty
+TTYPath=/dev/ttyS0
+
+[Install]
+WantedBy=multi-user.target
