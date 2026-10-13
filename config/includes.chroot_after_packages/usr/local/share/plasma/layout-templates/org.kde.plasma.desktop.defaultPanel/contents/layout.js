@@ -4,11 +4,16 @@ var bar = new Panel
 bar.location = "top"
 bar.height = 2 * Math.floor(gridUnit * 1.6 / 2)
 bar.floating = false
+bar.addWidget("org.kde.plasma.kickoff")      // the "Apple menu": applications
 bar.addWidget("org.kde.plasma.appmenu")
 bar.addWidget("org.kde.plasma.panelspacer")
 
 var panel = new Panel
 panel.location = "bottom"
+// QuackOS, step 2: the bottom panel is a floating dock, centered and as wide as its icons.
+panel.floating = true
+panel.lengthMode = "fit"
+panel.alignment = "center"
 var panelScreen = panel.screen
 
 // No need to set panel.location as ShellCorona::addPanel will automatically pick one available edge
@@ -16,7 +21,7 @@ var panelScreen = panel.screen
 // For an Icons-Only Task Manager on the bottom, *3 is too much, *2 is too little
 // Round down to next highest even number since the Panel size widget only displays
 // even numbers
-panel.height = 2 * Math.floor(gridUnit * 2.5 / 2)
+panel.height = 2 * Math.floor(gridUnit * 3.4 / 2)
 
 // Restrict horizontal panel to a maximum size of a 21:9 monitor
 const maximumAspectRatio = 21/9;
@@ -31,9 +36,7 @@ if (panel.formFactor === "horizontal") {
     }
 }
 
-panel.addWidget("org.kde.plasma.kickoff")
 //panel.addWidget("org.kde.plasma.showActivityManager")
-panel.addWidget("org.kde.plasma.pager")
 // QuackOS: the suite and the everyday apps pinned in the task manager (default is Settings, Discover, Files, Browser).
 // Same file name as Debian's template, but under /usr/local/share, which comes before /usr/share and is not owned by any package.
 var tasks = panel.addWidget("org.kde.plasma.icontasks")
@@ -96,5 +99,5 @@ if (langIds.indexOf(languageId) != -1) {
 
 bar.addWidget("org.kde.plasma.systemtray")
 bar.addWidget("org.kde.plasma.digitalclock")
-panel.addWidget("org.kde.plasma.showdesktop")
+panel.addWidget("org.kde.plasma.trash")
 
