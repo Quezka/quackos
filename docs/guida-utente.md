@@ -55,8 +55,8 @@ chiavetta reale): se ne trovi uno che non va, dillo nelle issue.
    dispositivo di avvio.
 3. Scegli la voce della chiavetta. Se compaiono due voci, una con «UEFI», prendi quella UEFI se il PC è recente.
 
-La ISO è configurata per avviarsi sia da UEFI (`grub-efi`) sia da BIOS tradizionale (`syslinux`). L'avvio UEFI è
-provato solo in macchina virtuale; **l'avvio BIOS e quello su hardware vero non sono verificati**.
+La ISO è configurata per avviarsi sia da UEFI (`grub-efi`) sia da BIOS tradizionale (`syslinux`). **Nessuno dei due modi di avvio è verificato su hardware vero**; il test automatico avvia la ISO solo in una
+macchina virtuale.
 
 ### Secure Boot
 
