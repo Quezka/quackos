@@ -1,0 +1,20 @@
+[Unit]
+Description=Mirror the latest QuackOS ISO from GitHub
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+User=quackos
+Group=quackos
+Environment=QUACKOS_DEST=/srv/quackos
+ExecStart=/usr/local/bin/quackos-pull
+# the script only writes in its own folder and needs only the network
+NoNewPrivileges=true
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+PrivateDevices=true
+ReadWritePaths=/srv/quackos
+# a big download on a slow line can take a while, but never forever
+TimeoutStartSec=3h
