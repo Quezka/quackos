@@ -1,7 +1,7 @@
-# Real-laptop hardware (target: ThinkPad, Intel Core i5-6300U Skylake, Intel Wi-Fi/Bluetooth).
+# Hardware coverage beyond the base lists: real PCs and laptops of many makers, and virtual machines.
 # Sizes are the .deb Size from the trixie index (the squashfs grows by about that much).
 
-# i915 firmware for Skylake (skl_dmc_ver1_27.bin = display power states, skl_guc/huc). It is only a
+# Intel iGPU firmware, Skylake onwards (e.g. skl_dmc_ver1_27.bin = display power states, skl_guc/huc). It is only a
 # *Recommends* of firmware-misc-nonfree, and apt-recommends is off, so it was NOT in the image. 6.4 MB.
 firmware-intel-graphics
 
@@ -10,3 +10,22 @@ power-profiles-daemon
 
 # Hardware video decode on Intel gen9+ (Skylake): VA-API driver "iHD". mesa-va-drivers does not cover Intel. 3.4 MB.
 intel-media-va-driver
+
+# --- 0.1.1 general subset (docs/hardware.md has the full matrix and what waits for 0.1.2) ---
+
+# Broadcom Wi-Fi (brcmfmac, many Dell/Apple/Lenovo laptops). Not firmware-b43: old BCM43xx cards need non-free drivers. 5.4 MB.
+firmware-brcm80211
+
+# Audio on Intel laptops from Tiger Lake onwards (Sound Open Firmware); without it: "Dummy Output". 1.4 MB.
+firmware-sof-signed
+# UCM profiles that SOF/AVS/Chromebook-class audio needs to route jacks and mics. 92 KB.
+alsa-ucm-conf
+
+# 2-in-1 laptops: screen auto-rotation and ambient light sensor. 36 KB.
+iio-sensor-proxy
+
+# Virtual machines. qemu-guest-agent: QEMU/KVM/virt-manager/Proxmox; spice-vdagent: clipboard and
+# window auto-resize in SPICE; open-vm-tools: VMware shutdown/time sync (no -desktop yet, it pulls gtkmm). 0.56 + 0.06 + 0.70 MB.
+qemu-guest-agent
+spice-vdagent
+open-vm-tools
