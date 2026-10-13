@@ -1,6 +1,6 @@
 # --- system basics ---
 sudo
-policykit-1
+polkitd
 pkexec
 curl
 ca-certificates

@@ -17,6 +17,7 @@ jobs:
           python-version: "3.12"
       - run: sudo apt-get update && sudo apt-get install -y shellcheck desktop-file-utils
       - run: python -m unittest discover -s tests -v
+      - run: python scripts/check-packages.py
       - run: shellcheck -S warning build.sh auto/config auto/build auto/clean scripts/boot-test.sh config/hooks/live/*.chroot config/includes.chroot_after_packages/usr/local/bin/quack
 
   iso:
