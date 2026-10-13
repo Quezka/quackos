@@ -168,6 +168,19 @@ class ImageDefinitionTest(unittest.TestCase):
             after = {t for line in re.findall(r"^After=(.*)$", text, re.M) for t in line.split()}
             self.assertFalse(wanted_by & after, "%s: After= and WantedBy= name the same target" % os.path.basename(path))
 
+    def test_firmware_is_chosen_by_hand(self):
+        # live-build's --firmware-chroot true installs every firmware some kernel module wants (~110 MB of server/TV/old
+        # hardware); it must stay off and the firmware we do want must be listed explicitly.
+        self.assertIn("--firmware-chroot false", read("auto", "config"))
+        listed = self.listed()
+        for package in ("firmware-iwlwifi", "firmware-realtek", "firmware-atheros", "firmware-brcm80211", "firmware-mediatek",
+                        "firmware-amd-graphics", "firmware-intel-graphics", "firmware-nvidia-graphics", "firmware-misc-nonfree",
+                        "firmware-sof-signed", "intel-microcode", "amd64-microcode"):
+            self.assertIn(package, listed, package)
+        for unwanted in ("firmware-marvell-prestera", "firmware-nvidia-tesla-535-gsp", "firmware-qlogic", "firmware-netronome",
+                         "firmware-bnx2x", "firmware-libertas"):
+            self.assertNotIn(unwanted, listed, unwanted)
+
     def test_suite_manifest(self):
         apps = {}
         for line in read("suite", "apps.list").splitlines():

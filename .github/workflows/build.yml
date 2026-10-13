@@ -70,7 +70,8 @@ jobs:
           GITHUB_TOKEN: ${{ github.token }}
         run: |
           compression=gzip
-          [ "$RELEASE_BUILD" = true ] && compression=xz
+          # xz for releases AND manual runs: manual runs are how we measure the real ISO size
+          if [ "$RELEASE_BUILD" = true ] || [ "${{ github.event_name }}" = workflow_dispatch ]; then compression=xz; fi
           echo "squashfs compression: $compression"
           docker run --rm --privileged -e GITHUB_TOKEN -e QUACKOS_COMPRESSION="$compression" \
             -v "$PWD":/work -w /work debian:trixie bash -c '
@@ -82,6 +83,9 @@ jobs:
           '
           sudo chown -R "$USER": out
           ls -lh out
+          bytes=$(stat -c %s out/quackos-*-amd64.iso)
+          echo "ISO size: $bytes bytes ($(( bytes / 1048576 )) MiB); GitHub's limit is 2147483648 (2048 MiB), margin $(( (2147483648 - bytes) / 1048576 )) MiB"
+          [ "$bytes" -lt 2147483648 ] || echo "::warning::the ISO is not under 2 GiB: the release will be split in parts"
       - name: Check what is inside the image (no boot needed)
         run: |
           sudo apt-get update

@@ -29,3 +29,18 @@ iio-sensor-proxy
 qemu-guest-agent
 spice-vdagent
 open-vm-tools
+
+# --- firmware kept by hand because --firmware-chroot is OFF (sizes: .deb, MB) ---
+# Mediatek Wi-Fi/Bluetooth (MT7921/22/25, common in recent AMD laptops). 19.6
+firmware-mediatek
+# Nvidia GPUs with the open nouveau driver (Maxwell onwards need it for acceleration). 39.5
+firmware-nvidia-graphics
+# Small ones that real laptops use: Intel misc (cameras, sensors) 1.9, old Intel audio 0.8, Cirrus audio amps 0.3,
+# cheap USB Wi-Fi dongles (ath9k_htc, carl9170) ~0.
+firmware-intel-misc
+firmware-intel-sound
+firmware-cirrus
+firmware-ath9k-htc
+firmware-carl9170
+# NOT kept (the saving): firmware-marvell-prestera, firmware-nvidia-tesla-535-gsp, qlogic/netronome/bnx2x/netxen/cavium
+# (server NICs), siano/ivtv (TV tuners), libertas/ipw2x00/zd1211/b43 (old, rare Wi-Fi).

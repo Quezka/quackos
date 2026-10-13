@@ -15,6 +15,9 @@ mkdir -p config/includes.chroot_after_packages/usr/share/quackos
 cp VERSION config/includes.chroot_after_packages/usr/share/quackos/version
 cp suite/apps.list config/includes.chroot_after_packages/usr/share/quackos/apps.list
 
+# firmware: --firmware-chroot false on purpose. With true, live-build installs EVERY firmware package some kernel module
+# wants (Marvell switch ASICs 61 MB, Nvidia datacenter GSP 39 MB, server NICs, TV tuners, old Wi-Fi dongles: ~110 MB
+# nobody needs on a desktop/laptop). The firmware we want is listed by hand in config/package-lists/*.list.chroot.
 lb config noauto \
     --mode debian \
     --distribution trixie \
@@ -27,7 +30,7 @@ lb config noauto \
     --security true \
     --updates true \
     --apt-recommends false \
-    --firmware-chroot true \
+    --firmware-chroot false \
     --memtest none \
     --iso-application "QuackOS" \
     --iso-publisher "Quezka" \
