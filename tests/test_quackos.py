@@ -158,6 +158,15 @@ class ImageDefinitionTest(unittest.TestCase):
                     if line.strip() and not line.startswith("#")}
         return out
 
+    def test_systemd_units_have_no_ordering_cycle(self):
+        # A target is implicitly After= every unit it Wants=, so After=X.target + WantedBy=X.target is a cycle:
+        # systemd drops one job silently and the unit never runs (this is exactly how quackos-debug.service broke).
+        for path in files("config/includes.chroot_after_packages/etc/systemd/system", ".service"):
+            text = read(os.path.relpath(path, ROOT))
+            wanted_by = set(re.findall(r"^WantedBy=(\S+)", text, re.M))
+            after = {t for line in re.findall(r"^After=(.*)$", text, re.M) for t in line.split()}
+            self.assertFalse(wanted_by & after, "%s: After= and WantedBy= name the same target" % os.path.basename(path))
+
     def test_suite_manifest(self):
         apps = {}
         for line in read("suite", "apps.list").splitlines():
