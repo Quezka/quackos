@@ -1,0 +1,157 @@
+"""Static checks of the QuackOS image definition (no root and no ISO needed)."""
+import os
+import re
+import shutil
+import stat
+import subprocess
+import unittest
+import xml.dom.minidom
+
+ROOT = os.path.join(os.path.dirname(__file__), "..")
+INC = os.path.join(ROOT, "config", "includes.chroot_after_packages")
+
+
+def read(*parts):
+    with open(os.path.join(ROOT, *parts), encoding="utf-8") as f:
+        return f.read()
+
+
+def files(folder, suffix=""):
+    out = []
+    for base, _dirs, names in os.walk(os.path.join(ROOT, folder)):
+        out += [os.path.join(base, n) for n in names if n.endswith(suffix)]
+    return sorted(out)
+
+
+class ImageDefinitionTest(unittest.TestCase):
+    def test_version_is_semver(self):
+        self.assertRegex(read("VERSION").strip(), r"^\d+\.\d+\.\d+$")
+
+    def test_auto_config_defines_the_image(self):
+        cfg = read("auto", "config")
+        for needle in ("--distribution trixie", "--binary-images iso-hybrid", "--debian-installer none",
+                       "username=quack", "boot=live", "QUACKOS_${VERSION}", "cp VERSION", "cp suite/apps.list"):
+            self.assertIn(needle, cfg)
+
+    def test_scripts_are_executable_and_parse(self):
+        scripts = ([os.path.join(ROOT, "build.sh")] + files("auto") + files("config/hooks")
+                   + [os.path.join(INC, "usr", "local", "bin", "quack")] + files("config/includes.chroot_after_packages/lib/live/config"))
+        for path in scripts:
+            self.assertTrue(os.stat(path).st_mode & stat.S_IXUSR, path + " is not executable")
+            self.assertEqual(subprocess.run(["bash", "-n", path]).returncode, 0, path)
+
+    def test_hooks_have_the_right_names_and_order(self):
+        names = [os.path.basename(p) for p in files("config/hooks/live")]
+        self.assertEqual(names, sorted(names))
+        for n in names:
+            self.assertRegex(n, r"^\d{4}-[a-z0-9-]+\.hook\.chroot$")
+        self.assertTrue(names[-1].startswith("0900-"), "cleanup (initramfs, apt clean) must run last")
+
+    def test_package_lists_are_clean(self):
+        seen = set()
+        for path in files("config/package-lists", ".list.chroot"):
+            for line in read(os.path.relpath(path, ROOT)).splitlines():
+                if not line.strip() or line.startswith("#"):
+                    continue
+                self.assertRegex(line, r"^[a-z0-9][a-z0-9+.\-]+$", "%s: %r" % (path, line))
+                self.assertNotIn(line, seen, "duplicate package " + line)
+                seen.add(line)
+        for essential in ("live-boot", "live-config", "calamares", "sddm", "kde-plasma-desktop", "plymouth",
+                          "firefox-esr", "librsvg2-bin", "imagemagick", "jq", "curl", "python3-venv"):
+            self.assertIn(essential, seen, essential)
+
+    def test_suite_manifest(self):
+        apps = {}
+        for line in read("suite", "apps.list").splitlines():
+            if not line.strip() or line.startswith("#"):
+                continue
+            name, repo, pattern = line.split(None, 2)
+            re.compile(pattern)
+            self.assertRegex(repo, r"^Quezka/[\w.-]+$")
+            apps[name] = (repo, pattern)
+        for must in ("stagno", "quire", "ligature", "gantry", "bivouac", "natter"):
+            self.assertIn(must, apps)
+        self.assertEqual(apps["stagno"][0], "Quezka/ducknet")      # Stagno's .deb lives in the DuckNet repo
+        # the .deb names the apps' own release workflows really produce
+        self.assertTrue(re.search(apps["stagno"][1], "stagno_0.4.0_amd64.deb"))
+        self.assertTrue(re.search(apps["natter"][1], "natter_0.7.0_all.deb"))
+        self.assertFalse(re.search(apps["quire"][1], "Quire-0.32.2-windows-x64-setup.exe"))
+
+    def test_suite_hook_verifies_checksums(self):
+        hook = read("config", "hooks", "live", "0400-quackos-suite.hook.chroot")
+        self.assertIn("sha256sum -c", hook)
+        self.assertIn("refusing to install it unverified", hook)
+        self.assertIn("set -euo pipefail", hook)
+
+    def test_os_release(self):
+        text = read("config", "includes.chroot_after_packages", "usr", "share", "quackos", "os-release.template")
+        fields = dict(line.split("=", 1) for line in text.strip().splitlines())
+        self.assertEqual(fields["ID"], "quackos")
+        self.assertEqual(fields["ID_LIKE"], "debian")
+        self.assertIn("@VERSION@", fields["VERSION_ID"])
+        self.assertEqual(fields["NAME"], '"QuackOS"')
+
+    def test_artwork_is_well_formed(self):
+        svgs = files("config/includes.chroot_after_packages/usr/share/quackos/branding", ".svg")
+        self.assertGreaterEqual(len(svgs), 4)
+        for svg in svgs:
+            xml.dom.minidom.parse(svg)
+
+    def test_every_rendered_artwork_has_a_source(self):
+        hook = read("config", "hooks", "live", "0200-quackos-artwork.hook.chroot")
+        for source in set(re.findall(r"\brender (\S+) \d+ \d+", hook)):
+            self.assertTrue(os.path.isfile(os.path.join(INC, "usr", "share", "quackos", "branding", source + ".svg")), source)
+
+    def test_plymouth_theme(self):
+        theme = os.path.join(INC, "usr", "share", "plymouth", "themes", "quackos")
+        self.assertIn("ModuleName=script", read(os.path.relpath(os.path.join(theme, "quackos.plymouth"), ROOT)))
+        script = read(os.path.relpath(os.path.join(theme, "quackos.script"), ROOT))
+        self.assertIn("Plymouth.SetBootProgressFunction", script)
+        for image in re.findall(r'Image\("([^"]+)"\)', script):       # each one is rendered by the artwork hook
+            self.assertIn(image, read("config", "hooks", "live", "0200-quackos-artwork.hook.chroot"))
+
+    def test_calamares_branding(self):
+        desc = read("config", "includes.chroot_after_packages", "usr", "share", "calamares", "branding", "quackos", "branding.desc")
+        for key in ("componentName: quackos", "productName:", "slideshow:", "bootloaderEntryName:"):
+            self.assertIn(key, desc)
+        self.assertIn("branding: quackos", read("config", "hooks", "live", "0500-quackos-calamares.hook.chroot"))
+
+    def test_no_generated_files_are_tracked(self):
+        git = shutil.which("git")
+        if not git or not os.path.isdir(os.path.join(ROOT, ".git")):
+            self.skipTest("not a git checkout")
+        tracked = subprocess.run([git, "ls-files"], cwd=ROOT, capture_output=True, text=True).stdout.split()
+        for path in tracked:
+            self.assertFalse(path.endswith((".iso", ".log")), path)
+            self.assertNotIn("usr/share/quackos/version", path)
+            self.assertNotIn("usr/share/quackos/apps.list", path)
+
+
+class QuackCommandTest(unittest.TestCase):
+    QUACK = os.path.join(INC, "usr", "local", "bin", "quack")
+
+    def run_quack(self, *args):
+        return subprocess.run(["bash", self.QUACK, *args], capture_output=True, text=True)
+
+    def test_say(self):
+        r = self.run_quack("say", "hello", "pond")
+        self.assertEqual(r.returncode, 0)
+        self.assertIn("hello pond", r.stdout)
+        self.assertIn("<(o )___", r.stdout)
+
+    def test_help_lists_every_command(self):
+        out = self.run_quack("help").stdout
+        for command in ("say", "update", "dns", "version", "help"):
+            self.assertIn("quack " + command, out)
+
+    def test_unknown_command_fails(self):
+        r = self.run_quack("nonsense")
+        self.assertEqual(r.returncode, 2)
+        self.assertIn("unknown command", r.stderr)
+
+    def test_dns_mentions_the_duck_server(self):
+        self.assertIn("dns.quezka.uk", self.run_quack("dns").stdout)
+
+
+if __name__ == "__main__":
+    unittest.main()

@@ -1,0 +1,32 @@
+# --- system basics ---
+sudo
+policykit-1
+pkexec
+curl
+ca-certificates
+git
+nano
+htop
+fastfetch
+jq
+unzip
+zip
+xdg-user-dirs
+python3
+python3-venv
+python3-pip
+librsvg2-bin
+imagemagick
+# --- network, bluetooth, sound ---
+network-manager
+bluez
+pipewire-audio
+wireplumber
+# --- fonts (emoji matter: ducks are emoji) ---
+fonts-noto-core
+fonts-noto-color-emoji
+fonts-firacode
+# --- the regular web (Stagno only speaks DuckNet) ---
+firefox-esr
+firefox-esr-l10n-it
+firefox-esr-l10n-ru

@@ -1,0 +1,36 @@
+---
+componentName: quackos
+
+welcomeStyleCalamares: true
+welcomeExpandingLogo: true
+windowExpanding: normal
+windowSize: 800px,520px
+windowPlacement: center
+sidebar: left
+
+strings:
+    productName:         QuackOS
+    shortProductName:    QuackOS
+    version:             "@VERSION@"
+    shortVersion:        "@VERSION@"
+    versionedName:       "QuackOS @VERSION@"
+    shortVersionedName:  "QuackOS @VERSION@"
+    bootloaderEntryName: QuackOS
+    productUrl:          https://github.com/Quezka/quackos
+    supportUrl:          https://github.com/Quezka/quackos/issues
+    knownIssuesUrl:      https://github.com/Quezka/quackos/issues
+    releaseNotesUrl:     https://github.com/Quezka/quackos/releases
+
+images:
+    productLogo:         "logo.png"
+    productIcon:         "logo.png"
+    productWelcome:      "welcome.png"
+
+slideshow:               "show.qml"
+slideshowAPI:            2
+
+style:
+    sidebarBackground:        "#14152e"
+    sidebarText:              "#ecedef"
+    sidebarTextSelect:        "#ffffff"
+    sidebarTextHighlight:     "#5b5bd6"

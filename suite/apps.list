@@ -1,0 +1,9 @@
+# QuackOS ships the whole Quezka suite, installed from each app's latest GitHub release.
+# Format:  <name> <github repo> <regex matching the .deb asset name>
+# The apps update themselves afterwards (Settings > Check for updates), so the ISO is not the only way in.
+stagno     Quezka/ducknet   ^stagno_.*_amd64\.deb$
+quire      Quezka/quire     ^quire_.*_amd64\.deb$
+ligature   Quezka/ligature  ^ligature_.*_amd64\.deb$
+gantry     Quezka/gantry    ^gantry_.*_amd64\.deb$
+bivouac    Quezka/bivouac   ^bivouac_.*_amd64\.deb$
+natter     Quezka/natter    ^natter_.*_all\.deb$

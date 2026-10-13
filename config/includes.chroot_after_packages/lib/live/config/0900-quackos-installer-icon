@@ -1,0 +1,13 @@
+#!/bin/sh
+# live-config script: runs only while booting the live system, never on an installed one.
+. /lib/live/config.sh
+Install_launcher() {
+    user="${LIVE_USERNAME:-quack}"
+    home="/home/${user}"
+    [ -d "$home" ] || return 0
+    mkdir -p "$home/Desktop"
+    cp /usr/share/applications/install-quackos.desktop "$home/Desktop/"
+    chmod +x "$home/Desktop/install-quackos.desktop"
+    chown -R "$user:$user" "$home/Desktop"
+}
+Install_launcher

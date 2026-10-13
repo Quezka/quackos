@@ -1,0 +1,46 @@
+#!/bin/bash
+# Renders the SVG artwork into the PNGs that KDE, SDDM, Plymouth and Calamares want, and replaces the
+# default Plasma wallpaper ("Next") so a fresh user sees the pond instead of the stock picture.
+set -euo pipefail
+BR=/usr/share/quackos/branding
+render() { rsvg-convert -w "$2" -h "$3" "$BR/$1.svg" -o "$4"; }
+
+mkdir -p /usr/share/backgrounds/quackos
+render wallpaper 1920 1080 /usr/share/backgrounds/quackos/quackos.png
+render wallpaper 3840 2160 /usr/share/backgrounds/quackos/quackos-4k.png
+
+# Plymouth
+P=/usr/share/plymouth/themes/quackos
+render logo 192 192 "$P/logo.png"
+render bar-bg 400 10 "$P/bar-bg.png"
+render bar-fill 400 10 "$P/bar-fill.png"
+plymouth-set-default-theme quackos
+
+# Calamares
+C=/usr/share/calamares/branding/quackos
+render logo 256 256 "$C/logo.png"
+render logo 256 256 "$C/welcome.png"
+
+# Icon for launchers (theme-independent)
+mkdir -p /usr/share/icons/hicolor/scalable/apps /usr/share/icons/hicolor/256x256/apps
+cp "$BR/logo.svg" /usr/share/icons/hicolor/scalable/apps/quackos.svg
+render logo 256 256 /usr/share/icons/hicolor/256x256/apps/quackos.png
+
+# Plasma's default wallpaper: overwrite every size Plasma ships, keeping names and formats
+find /usr/share/wallpapers/Next -type f -regextype posix-extended \
+    -regex '.*/[0-9]+x[0-9]+\.(png|jpg|jpeg|webp)' 2>/dev/null | while read -r f; do
+    dims="$(basename "$f" | sed -E 's/^([0-9]+)x([0-9]+)\..*/\1 \2/')"
+    set -- $dims
+    tmp="$(mktemp --suffix=.png)"
+    render wallpaper "$1" "$2" "$tmp"
+    case "$f" in
+        *.png) mv "$tmp" "$f" ;;
+        *)     convert "$tmp" "$f" && rm -f "$tmp" ;;
+    esac
+done
+
+# SDDM login screen background
+T=/usr/share/sddm/themes/breeze
+if [ -d "$T" ]; then
+    printf '[General]\nbackground=/usr/share/backgrounds/quackos/quackos.png\ntype=image\n' > "$T/theme.conf.user"
+fi

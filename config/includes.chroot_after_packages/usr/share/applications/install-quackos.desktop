@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Install QuackOS
+Name[it]=Installa QuackOS
+Name[ru]=Установить QuackOS
+Comment=Install QuackOS on this computer
+Exec=pkexec /usr/bin/calamares
+Icon=quackos
+Terminal=false
+Categories=System;

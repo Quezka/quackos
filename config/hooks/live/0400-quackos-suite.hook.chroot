@@ -1,0 +1,36 @@
+#!/bin/bash
+# Installs the Quezka app suite from GitHub releases, verifying each download against the SHA-256
+# GitHub publishes for the asset. Fails the build if anything is missing or does not match.
+set -euo pipefail
+
+LIST=/usr/share/quackos/apps.list
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+AUTH=()
+[ -n "${GITHUB_TOKEN:-}" ] && AUTH=(-H "Authorization: Bearer ${GITHUB_TOKEN}")
+
+while read -r name repo pattern; do
+    case "$name" in ''|'#'*) continue ;; esac
+    echo "== $name ($repo)"
+    release="$(curl -fsSL "${AUTH[@]}" -H 'Accept: application/vnd.github+json' \
+        "https://api.github.com/repos/${repo}/releases/latest")"
+    asset="$(jq -r --arg re "$pattern" '[.assets[] | select(.name | test($re))][0] // empty' <<<"$release")"
+    [ -n "$asset" ] || { echo "no asset matching $pattern in $repo" >&2; exit 1; }
+    file="$(jq -r .name <<<"$asset")"
+    url="$(jq -r .browser_download_url <<<"$asset")"
+    digest="$(jq -r '.digest // empty' <<<"$asset" | sed 's/^sha256://')"
+    [ -n "$digest" ] || { echo "GitHub gave no SHA-256 for $file: refusing to install it unverified" >&2; exit 1; }
+    curl -fsSL -o "$WORK/$file" "$url"
+    echo "$digest  $WORK/$file" | sha256sum -c -
+    echo "$name $(jq -r .tag_name <<<"$release")" >> /usr/share/quackos/suite-versions.txt
+done < "$LIST"
+
+# One apt transaction, so shared dependencies are resolved together.
+apt-get install -y --no-install-recommends "$WORK"/*.deb
+rm -rf /var/lib/apt/lists/*
+
+# The DuckNet command line (server, DNS, relay, host): pure Python, no dependencies.
+ducknet_tag="$(grep '^stagno ' /usr/share/quackos/suite-versions.txt | cut -d' ' -f2)"
+python3 -m venv /opt/ducknet
+/opt/ducknet/bin/pip install --no-cache-dir "https://github.com/Quezka/ducknet/archive/refs/tags/${ducknet_tag}.tar.gz"
+ln -sf /opt/ducknet/bin/ducknet /usr/local/bin/ducknet

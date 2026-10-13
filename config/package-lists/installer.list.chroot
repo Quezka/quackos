@@ -1,0 +1,12 @@
+# Calamares, with the Debian settings it needs for partitioning, users and the bootloader
+calamares
+calamares-settings-debian
+grub-efi-amd64
+grub-pc-bin
+efibootmgr
+shim-signed
+os-prober
+cryptsetup
+dosfstools
+e2fsprogs
+btrfs-progs

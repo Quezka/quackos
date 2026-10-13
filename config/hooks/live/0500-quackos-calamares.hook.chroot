@@ -1,0 +1,6 @@
+#!/bin/bash
+# Points Calamares at the QuackOS branding and tells the installed system its name.
+set -euo pipefail
+if [ -f /etc/calamares/settings.conf ]; then
+    sed -i -E 's/^branding:.*/branding: quackos/' /etc/calamares/settings.conf
+fi

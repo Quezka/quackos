@@ -1,0 +1,12 @@
+PRETTY_NAME="QuackOS @VERSION@ (Duckling)"
+NAME="QuackOS"
+VERSION_ID="@VERSION@"
+VERSION="@VERSION@ (Duckling)"
+VERSION_CODENAME=trixie
+ID=quackos
+ID_LIKE=debian
+HOME_URL="https://github.com/Quezka/quackos"
+SUPPORT_URL="https://github.com/Quezka/quackos/issues"
+BUG_REPORT_URL="https://github.com/Quezka/quackos/issues"
+LOGO=quackos
+ANSI_COLOR="38;2;129;130;240"

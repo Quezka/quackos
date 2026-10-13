@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1920 1080" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="#14152e"/><stop offset=".55" stop-color="#2b2c6b"/><stop offset="1" stop-color="#5b5bd6"/></linearGradient>
+    <radialGradient id="glow" cx=".72" cy=".62" r=".55"><stop offset="0" stop-color="#8182f0" stop-opacity=".55"/><stop offset="1" stop-color="#8182f0" stop-opacity="0"/></radialGradient>
+  </defs>
+  <rect width="1920" height="1080" fill="url(#sky)"/>
+  <rect width="1920" height="1080" fill="url(#glow)"/>
+  <g fill="none" stroke="#fff" stroke-opacity=".10" stroke-width="3">
+    <ellipse cx="1380" cy="700" rx="140" ry="36"/><ellipse cx="1380" cy="700" rx="270" ry="70"/>
+    <ellipse cx="1380" cy="700" rx="420" ry="108"/><ellipse cx="1380" cy="700" rx="590" ry="150"/>
+    <ellipse cx="1380" cy="700" rx="780" ry="198"/><ellipse cx="1380" cy="700" rx="990" ry="250"/>
+  </g>
+  <g transform="translate(1290 540) scale(1.1)">
+    <ellipse cx="110" cy="188" rx="86" ry="14" fill="#000" fill-opacity=".18"/>
+    <ellipse cx="102" cy="132" rx="64" ry="42" fill="#fff"/>
+    <circle cx="136" cy="68" r="38" fill="#fff"/>
+    <path d="M168 64l40 12-40 16z" fill="#f5a524"/>
+    <circle cx="144" cy="60" r="6" fill="#4c4cc4"/>
+    <path d="M44 146c18 8 40 6 58-6" stroke="#4c4cc4" stroke-width="7" stroke-linecap="round" fill="none"/>
+  </g>
+  <text x="120" y="940" font-family="Inter, 'Noto Sans', sans-serif" font-size="64" font-weight="700" fill="#fff" fill-opacity=".92">QuackOS</text>
+  <text x="124" y="990" font-family="Inter, 'Noto Sans', sans-serif" font-size="26" fill="#fff" fill-opacity=".6">the distro that quacks</text>
+</svg>

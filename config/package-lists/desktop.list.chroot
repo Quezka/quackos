@@ -1,0 +1,22 @@
+# KDE Plasma 6, kept lean so the ISO stays under GitHub's 2 GiB release-asset limit
+kde-plasma-desktop
+sddm
+sddm-theme-breeze
+plasma-nm
+plasma-pa
+plasma-systemmonitor
+dolphin
+konsole
+kate
+ark
+gwenview
+okular
+spectacle
+kcalc
+partitionmanager
+# Italian and Russian desktops (QuackOS speaks both, like Quire)
+task-italian-kde-desktop
+task-russian-kde-desktop
+# boot splash
+plymouth
+plymouth-themes

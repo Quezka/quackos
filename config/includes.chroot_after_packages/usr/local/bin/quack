@@ -1,0 +1,45 @@
+#!/usr/bin/env bash
+# quack: the QuackOS multi-tool. Small, silly and useful.
+set -u
+VERSION="$(. /etc/os-release && echo "$VERSION_ID")"
+
+duck() { printf '   __\n <(o )___   %s\n  ( ._> /\n   `---'"'"'\n' "$1"; }
+
+help() {
+    cat <<H
+quack                 the pond report (system info)
+quack say <text>      the duck says it
+quack update          update the whole system (asks for your password)
+quack dns             where Stagno/DuckNet looks for .duck names
+quack version         QuackOS version
+quack help            this text
+H
+}
+
+case "${1:-info}" in
+    info)
+        export QUACKOS_DUCKNET="dns.quezka.uk"
+        command -v fastfetch >/dev/null && exec fastfetch || { duck "QuackOS $VERSION"; uname -sr; }
+        ;;
+    say)
+        shift
+        duck "${*:-quack!}"
+        ;;
+    update)
+        exec pkexec bash -c 'apt-get update && apt-get -y full-upgrade && apt-get -y autoremove'
+        ;;
+    dns)
+        echo "DuckNet DNS: dns.quezka.uk (the default in Stagno; change it in Stagno > Settings)"
+        ;;
+    version|--version|-V)
+        echo "QuackOS $VERSION"
+        ;;
+    help|--help|-h)
+        help
+        ;;
+    *)
+        echo "quack: unknown command '$1'" >&2
+        help >&2
+        exit 2
+        ;;
+esac

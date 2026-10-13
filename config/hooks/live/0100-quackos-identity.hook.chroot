@@ -1,0 +1,15 @@
+#!/bin/bash
+# Makes the system call itself QuackOS (still Debian underneath: ID_LIKE=debian).
+set -euo pipefail
+VERSION="$(cat /usr/share/quackos/version)"
+sed "s/@VERSION@/${VERSION}/g" /usr/share/quackos/os-release.template > /usr/lib/os-release
+ln -sf ../usr/lib/os-release /etc/os-release
+cat > /etc/lsb-release <<L
+DISTRIB_ID=QuackOS
+DISTRIB_RELEASE=${VERSION}
+DISTRIB_CODENAME=duckling
+DISTRIB_DESCRIPTION="QuackOS ${VERSION}"
+L
+echo quackos > /etc/hostname
+# version shown by Calamares too
+sed -i "s/@VERSION@/${VERSION}/g" /usr/share/calamares/branding/quackos/branding.desc

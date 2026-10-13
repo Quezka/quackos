@@ -1,0 +1,8 @@
+[Plymouth Theme]
+Name=QuackOS
+Description=A duck, a pond and a progress bar
+ModuleName=script
+
+[script]
+ImageDir=/usr/share/plymouth/themes/quackos
+ScriptFile=/usr/share/plymouth/themes/quackos/quackos.script

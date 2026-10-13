@@ -1,0 +1,100 @@
+name: build
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  static:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: sudo apt-get update && sudo apt-get install -y shellcheck desktop-file-utils
+      - run: python -m unittest discover -s tests -v
+      - run: shellcheck -S warning build.sh auto/config auto/build auto/clean scripts/boot-test.sh config/hooks/live/*.chroot config/includes.chroot_after_packages/usr/local/bin/quack
+
+  iso:
+    needs: static
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    steps:
+      - uses: actions/checkout@v4
+      - name: Free disk space (the build needs about 15 GB)
+        run: |
+          sudo rm -rf /usr/share/dotnet /opt/ghc /usr/local/lib/android /opt/hostedtoolcache/CodeQL
+          df -h /
+      - name: Build the ISO inside Debian 13
+        env:
+          GITHUB_TOKEN: ${{ github.token }}
+        run: |
+          docker run --rm --privileged -e GITHUB_TOKEN -v "$PWD":/work -w /work debian:trixie bash -c '
+            set -euo pipefail
+            apt-get update
+            apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso \
+                ca-certificates curl jq git sudo
+            ./build.sh
+          '
+          sudo chown -R "$USER": out
+          ls -lh out
+      - name: Boot the ISO in QEMU
+        run: |
+          sudo apt-get install -y qemu-system-x86 xorriso
+          sudo scripts/boot-test.sh out/quackos-*-amd64.iso
+      - uses: actions/upload-artifact@v4
+        with:
+          name: QuackOS-ISO
+          retention-days: 7
+          compression-level: 0
+          path: out/*
+
+  release:
+    # Pushing a tag like v0.1.0 publishes that version's ISO.
+    needs: iso
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check the tag matches VERSION
+        run: |
+          if [ "v$(cat VERSION)" != "$GITHUB_REF_NAME" ]; then
+            echo "::error::Tag $GITHUB_REF_NAME does not match VERSION ($(cat VERSION))"; exit 1
+          fi
+      - uses: actions/download-artifact@v4
+        with:
+          name: QuackOS-ISO
+          path: out
+      - name: Publish the GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          cd out
+          iso="$(ls quackos-*-amd64.iso)"
+          size=$(stat -c %s "$iso")
+          files=("$iso" "$iso.sha256")
+          # GitHub release assets are limited to 2 GiB: split bigger images, they join back with cat.
+          if [ "$size" -gt 2000000000 ]; then
+            split -d -b 1900M "$iso" "$iso.part"
+            rm "$iso"
+            files=("$iso".part* "$iso.sha256")
+            note="The image is split in parts (GitHub's 2 GiB limit). Join them with: \`cat $iso.part* > $iso\` then check with \`sha256sum -c $iso.sha256\`."
+          else
+            note="Write it to a USB stick with Balena Etcher, KDE ISO Image Writer, or \`dd\`."
+          fi
+          cd ..
+          {
+            echo "QuackOS $(cat VERSION): Debian 13 + KDE Plasma, with the whole Quezka suite preinstalled."
+            echo
+            echo "$note"
+            echo
+            echo "Live user: \`quack\`, password: \`live\`. Click *Install QuackOS* on the desktop to install."
+          } > notes.md
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "QuackOS $(cat VERSION)" \
+            --notes-file notes.md $(printf 'out/%s ' "${files[@]}")

@@ -1,0 +1,35 @@
+#!/bin/sh
+# live-build calls this on `lb config`. Everything that defines the image is here.
+set -e
+
+VERSION="$(cat VERSION)"
+LOCALE="${QUACKOS_LOCALE:-it_IT.UTF-8}"
+KEYMAP="${QUACKOS_KEYMAP:-it}"
+TIMEZONE="${QUACKOS_TIMEZONE:-Europe/Rome}"
+
+# Single sources of truth (VERSION, suite/apps.list) are copied into the image tree here.
+mkdir -p config/includes.chroot_after_packages/usr/share/quackos
+cp VERSION config/includes.chroot_after_packages/usr/share/quackos/version
+cp suite/apps.list config/includes.chroot_after_packages/usr/share/quackos/apps.list
+
+lb config noauto \
+    --mode debian \
+    --distribution trixie \
+    --archive-areas "main contrib non-free-firmware" \
+    --architectures amd64 \
+    --linux-flavours amd64 \
+    --binary-images iso-hybrid \
+    --bootloaders "syslinux,grub-efi" \
+    --debian-installer none \
+    --security true \
+    --updates true \
+    --apt-recommends false \
+    --firmware-chroot true \
+    --memtest none \
+    --iso-application "QuackOS" \
+    --iso-publisher "Quezka" \
+    --iso-volume "QUACKOS_${VERSION}" \
+    --image-name "quackos-${VERSION}" \
+    --chroot-squashfs-compression-type xz \
+    --bootappend-live "boot=live components quiet splash username=quack hostname=quackos locales=${LOCALE} keyboard-layouts=${KEYMAP} timezone=${TIMEZONE}" \
+    "${@}"
