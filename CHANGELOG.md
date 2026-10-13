@@ -6,6 +6,7 @@
 - The live session now logs into Plasma on **X11** (works on much more hardware than Wayland); boot with `quackos.wayland` to get Wayland.
 - The "Install QuackOS" icon now uses Debian's own Calamares launcher (the old one could not open a window), branded as QuackOS.
 - NTFS: `ntfs-3g` is installed and udisks2 is set to use **only** it, so a Windows volume left hibernated (Fast Startup) is refused instead of being written to (`docs/ntfs-e-dual-boot.md`). Not yet tested on real hardware.
+- Real-laptop hardware (ThinkPad, Skylake): i915 firmware (`firmware-intel-graphics`, only a Recommends before, so it was missing), `power-profiles-daemon`, Intel VA-API video decode.
 - Installed system: signed GRUB (`grub-efi-amd64-signed`, for Secure Boot) and `quiet splash` on the kernel command line.
 - Calamares branding fixed against Calamares 3.3.14 (real key names, `sidebar: widget`, slideshow timer, Plymouth password prompt callbacks).
 - Plasma panel with the Quezka suite and everyday apps pinned (layout template under `/usr/local/share`; not yet seen on screen).
