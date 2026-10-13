@@ -1,0 +1,12 @@
+# System-wide KWin defaults (a user's own ~/.config/kwinrc overrides these).
+# Window buttons on the left like macOS: X = close, I = minimize, A = maximize.
+[org.kde.kdecoration2]
+ButtonsOnLeft=XIA
+ButtonsOnRight=
+
+[Plugins]
+blurEnabled=true
+
+[Effect-blur]
+BlurStrength=10
+NoiseStrength=2
