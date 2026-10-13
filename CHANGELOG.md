@@ -8,6 +8,7 @@
 - NTFS: `ntfs-3g` is installed and udisks2 is set to use **only** it, so a Windows volume left hibernated (Fast Startup) is refused instead of being written to (`docs/ntfs-e-dual-boot.md`). Not yet tested on real hardware.
 - Real-laptop hardware (ThinkPad, Skylake): i915 firmware (`firmware-intel-graphics`, only a Recommends before, so it was missing), `power-profiles-daemon`, Intel VA-API video decode.
 - Fix: the desktop background was black. Plasma 6.3's default wallpaper (Id "Next") lives in a package that is not in the image; QuackOS now ships its own wallpaper package with that Id and the build fails if it cannot be rendered.
+- General hardware coverage (`docs/hardware.md`): Broadcom Wi-Fi firmware, Sound Open Firmware for Intel laptops from Tiger Lake on, ALSA UCM profiles, screen rotation sensor, and guest tools for QEMU/KVM, SPICE and VMware. Mediatek Wi-Fi, NVIDIA firmware and fingerprint readers wait for 0.1.2.
 - Installed system: signed GRUB (`grub-efi-amd64-signed`, for Secure Boot) and `quiet splash` on the kernel command line.
 - Calamares branding fixed against Calamares 3.3.14 (real key names, `sidebar: widget`, slideshow timer, Plymouth password prompt callbacks).
 - Plasma panel with the Quezka suite and everyday apps pinned (layout template under `/usr/local/share`; not yet seen on screen).
