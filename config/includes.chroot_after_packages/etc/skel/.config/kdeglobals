@@ -8,6 +8,7 @@ smallestReadableFont=Inter,8,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 fixed=Hack,10,-1,5,400,0,0,0,0,0,0,0,0,0,0,1
 
 [KDE]
+SingleClick=false
 LookAndFeelPackage=org.kde.breezedark.desktop
 
 [WM]

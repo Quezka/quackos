@@ -39,5 +39,13 @@ class AppearanceTest(unittest.TestCase):
             self.assertIn("Bibata-Modern-Classic", f.read())
         self.assertTrue(os.access(hook, os.X_OK))
 
+    def test_window_buttons_on_the_left(self):
+        deco = ini("etc", "xdg", "kwinrc")["org.kde.kdecoration2"]
+        self.assertEqual(deco["ButtonsOnLeft"], "XIA")
+        self.assertEqual(deco["ButtonsOnRight"], "")
+
+    def test_double_click_like_macos(self):
+        self.assertEqual(ini("etc", "skel", ".config", "kdeglobals")["KDE"]["SingleClick"], "false")
+
 if __name__ == "__main__":
     unittest.main()
