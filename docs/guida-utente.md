@@ -101,13 +101,24 @@ Il partizionamento è il passo che può cancellare dati: leggi bene cosa propone
 
 ## 6. Dischi e partizioni Windows (NTFS)
 
-Il supporto NTFS di QuackOS è in lavorazione e **non è verificato**: leggere e scrivere le partizioni Windows
-potrebbe non funzionare ancora come descritto qui. Cose valide con qualsiasi Linux:
+QuackOS è configurato per usare **solo `ntfs-3g`** per NTFS (`ntfs_drivers=ntfs` in
+`/etc/udisks2/mount_options.conf`; il driver `ntfs3` del kernel è escluso di proposito). Di default i file
+risultano dell'utente che monta e i nomi non validi per Windows sono rifiutati (`windows_names`).
 
-- Prima di montare una partizione Windows **in scrittura**, in Windows disattiva **Avvio rapido** (Fast Startup:
-  Pannello di controllo → Opzioni risparmio energia → «Specifica comportamento dei pulsanti di alimentazione») e non
-  usare l'**ibernazione**. Con Avvio rapido «Arresta» non spegne davvero il disco: lo lascia in stato di ibernazione
-  e scriverci da Linux può corromperlo; di solito Linux lo monta solo in lettura o rifiuta di montarlo.
+**Non verificato:** nessuno ha ancora provato il montaggio NTFS su un'installazione reale o su hardware vero, e il
+pacchetto `ntfs-3g` deve ancora essere aggiunto alla lista dei pacchetti dell'immagine. Se non è presente,
+l'NTFS in scrittura non funziona. Non è nemmeno verificato se il «Notificatore dei dispositivi» di KDE monti i
+dischi da solo: `udisks2` di suo non monta nulla all'inserimento.
+
+Dettagli tecnici: `docs/ntfs-e-dual-boot.md`.
+
+Cose da sapere con qualsiasi Linux:
+
+- Prima di scrivere su una partizione Windows, in Windows disattiva **Avvio rapido** (Fast Startup: Pannello di
+  controllo → Opzioni risparmio energia → «Specifica comportamento dei pulsanti di alimentazione») e non usare
+  l'**ibernazione**. Con Avvio rapido «Arresta» lascia il disco in stato di ibernazione.
+- In quel caso `ntfs-3g` **rifiuta il montaggio** invece di scrivere. È il comportamento noto di `ntfs-3g`, non
+  provato su QuackOS.
 - Per spegnere del tutto Windows usa «Riavvia», oppure `shutdown /s /f /t 0` da un prompt dei comandi.
 - Fai un backup prima di scrivere su un disco Windows per la prima volta.
 
