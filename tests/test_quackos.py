@@ -114,6 +114,50 @@ class ImageDefinitionTest(unittest.TestCase):
         self.assertNotIn("pkexec /usr/bin/calamares", text)
         self.assertIn("/usr/share/icons/hicolor/scalable/apps/quackos.svg", read("config", "hooks", "live", "0200-quackos-artwork.hook.chroot"))
 
+    def test_ntfs_is_safe_by_default(self):
+        conf = read("config", "includes.chroot_after_packages", "etc", "udisks2", "mount_options.conf")
+        drivers = re.search(r"^ntfs_drivers=(\S+)$", conf, re.M).group(1)
+        # ntfs-3g refuses hibernated (Fast Startup) volumes; udisks falls back to the next driver, so ntfs3 must not be listed
+        self.assertEqual(drivers, "ntfs")
+        self.assertIn("ntfs-3g", self.listed())
+
+    def test_secure_boot_and_splash_on_the_installed_system(self):
+        self.assertIn("grub-efi-amd64-signed", self.listed())
+        self.assertIn("shim-signed", self.listed())
+        cfg = read("config", "includes.chroot_after_packages", "etc", "default", "grub.d", "quackos.cfg")
+        self.assertIn('GRUB_DISTRIBUTOR="QuackOS"', cfg)
+        self.assertIn("splash", cfg)
+
+    def test_calamares_branding_uses_keys_calamares_knows(self):
+        # verified against libcalamaresui 3.3.14 (trixie) and Debian's own branding.desc: these are the real key names
+        desc = read("config", "includes.chroot_after_packages", "usr", "share", "calamares", "branding", "quackos", "branding.desc")
+        for key in ("SidebarBackground:", "SidebarText:", "SidebarTextCurrent:", "SidebarBackgroundCurrent:", "sidebar: widget", "navigation: widget"):
+            self.assertIn(key, desc)
+        for wrong in ("sidebarBackground", "sidebarTextSelect", "sidebarTextHighlight", "sidebar: left"):
+            self.assertNotIn(wrong, desc)
+
+    def test_plasma_panel_pins_only_apps_that_exist(self):
+        layout = read("config", "includes.chroot_after_packages", "usr", "local", "share", "plasma", "layout-templates",
+                      "org.kde.plasma.desktop.defaultPanel", "contents", "layout.js")
+        self.assertEqual(layout.count("{"), layout.count("}"))
+        self.assertEqual(layout.count("("), layout.count(")"))
+        self.assertEqual(layout.count("["), layout.count("]"))
+        pinned = re.findall(r'"applications:([^"]+)"', layout)
+        suite = ["io.github.quezka.%s.desktop" % n for n in ("Stagno", "Quire", "Ligature", "Gantry", "Bivouac", "Natter")]
+        for desktop in suite:
+            self.assertIn(desktop, pinned)
+        # the others come from Debian packages that must be in the lists
+        self.assertIn("firefox-esr.desktop", pinned)
+        for package in ("firefox-esr", "dolphin", "konsole"):
+            self.assertIn(package, self.listed())
+
+    def listed(self):
+        out = set()
+        for path in files("config/package-lists", ".list.chroot"):
+            out |= {line.strip() for line in read(os.path.relpath(path, ROOT)).splitlines()
+                    if line.strip() and not line.startswith("#")}
+        return out
+
     def test_suite_manifest(self):
         apps = {}
         for line in read("suite", "apps.list").splitlines():

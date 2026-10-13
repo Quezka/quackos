@@ -105,10 +105,11 @@ QuackOS è configurato per usare **solo `ntfs-3g`** per NTFS (`ntfs_drivers=ntfs
 `/etc/udisks2/mount_options.conf`; il driver `ntfs3` del kernel è escluso di proposito). Di default i file
 risultano dell'utente che monta e i nomi non validi per Windows sono rifiutati (`windows_names`).
 
-**Non verificato:** nessuno ha ancora provato il montaggio NTFS su un'installazione reale o su hardware vero, e il
-pacchetto `ntfs-3g` deve ancora essere aggiunto alla lista dei pacchetti dell'immagine. Se non è presente,
-l'NTFS in scrittura non funziona. Non è nemmeno verificato se il «Notificatore dei dispositivi» di KDE monti i
-dischi da solo: `udisks2` di suo non monta nulla all'inserimento.
+Il pacchetto `ntfs-3g` è nella lista dei pacchetti dell'immagine (dalla 0.1.1).
+
+**Non verificato:** nessuno ha ancora provato il montaggio NTFS su un'installazione reale o su hardware vero, né se il
+rifiuto dei volumi con Avvio rapido di Windows (Fast Startup) funziona davvero. Non è nemmeno verificato se il
+«Notificatore dei dispositivi» di KDE monti i dischi da solo: `udisks2` di suo non monta nulla all'inserimento.
 
 Dettagli tecnici: `docs/ntfs-e-dual-boot.md`.
 
