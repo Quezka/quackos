@@ -1,0 +1,13 @@
+{
+    "KPackageStructure": "Wallpaper/Images",
+    "KPlugin": {
+        "Authors": [
+            {
+                "Name": "Quezka"
+            }
+        ],
+        "Id": "Next",
+        "License": "GPL-3.0",
+        "Name": "QuackOS"
+    }
+}
