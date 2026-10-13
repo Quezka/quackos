@@ -77,10 +77,15 @@ class ImageDefinitionTest(unittest.TestCase):
         self.assertTrue(re.search(apps["natter"][1], "natter_0.7.0_all.deb"))
         self.assertFalse(re.search(apps["quire"][1], "Quire-0.32.2-windows-x64-setup.exe"))
 
-    def test_suite_hook_verifies_checksums(self):
-        hook = read("config", "hooks", "live", "0400-quackos-suite.hook.chroot")
-        self.assertIn("sha256sum -c", hook)
-        self.assertIn("refusing to install it unverified", hook)
+    def test_suite_download_verifies_checksums(self):
+        script = read("scripts", "fetch-suite.py")
+        self.assertIn("refusing to install it unverified", script)
+        self.assertIn("refusing to use it", script)
+        self.assertIn("python3 scripts/fetch-suite.py", read("build.sh"))
+
+    def test_ducknet_hook_uses_the_stagno_version(self):
+        hook = read("config", "hooks", "live", "0400-quackos-ducknet.hook.chroot")
+        self.assertIn("suite-versions.txt", hook)
         self.assertIn("set -euo pipefail", hook)
 
     def test_os_release(self):
@@ -125,6 +130,39 @@ class ImageDefinitionTest(unittest.TestCase):
             self.assertFalse(path.endswith((".iso", ".log")), path)
             self.assertNotIn("usr/share/quackos/version", path)
             self.assertNotIn("usr/share/quackos/apps.list", path)
+
+
+class FetchSuiteTest(unittest.TestCase):
+    @classmethod
+    def setUpClass(cls):
+        import importlib.util
+        spec = importlib.util.spec_from_file_location("fetch_suite", os.path.join(ROOT, "scripts", "fetch-suite.py"))
+        cls.mod = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(cls.mod)
+
+    def release(self, **asset):
+        base = {"name": "stagno_1.0.0_amd64.deb", "browser_download_url": "https://x/a.deb", "digest": "sha256:" + "a" * 64}
+        base.update(asset)
+        return {"tag_name": "v1.0.0", "assets": [{"name": "Stagno-1.0.0-windows-x64-setup.exe", "browser_download_url": "u", "digest": "sha256:" + "b" * 64}, base]}
+
+    def test_manifest_is_parsed(self):
+        apps = self.mod.parse_manifest(read("suite", "apps.list"))
+        self.assertIn("stagno", [name for name, _repo, _pattern in apps])
+
+    def test_picks_the_matching_asset_and_its_digest(self):
+        pattern = self.mod.re.compile(r"^stagno_.*_amd64\.deb$")
+        name, url, digest = self.mod.pick_asset(self.release(), pattern)
+        self.assertEqual((name, url, digest), ("stagno_1.0.0_amd64.deb", "https://x/a.deb", "a" * 64))
+
+    def test_refuses_an_asset_without_a_checksum(self):
+        pattern = self.mod.re.compile(r"^stagno_.*_amd64\.deb$")
+        for digest in (None, "", "md5:abc", "sha256:xyz"):
+            with self.assertRaises(self.mod.SuiteError, msg=repr(digest)):
+                self.mod.pick_asset(self.release(digest=digest), pattern)
+
+    def test_refuses_a_release_without_the_file(self):
+        with self.assertRaises(self.mod.SuiteError):
+            self.mod.pick_asset(self.release(), self.mod.re.compile(r"^nothing$"))
 
 
 class QuackCommandTest(unittest.TestCase):

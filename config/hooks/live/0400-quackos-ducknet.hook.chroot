@@ -1,0 +1,9 @@
+#!/bin/bash
+# The DuckNet command line (server, DNS, relay, host): pure Python, no dependencies, same version as Stagno.
+# (The apps themselves are the .deb files fetched by scripts/fetch-suite.py and installed by live-build.)
+set -euo pipefail
+
+tag="$(grep '^stagno ' /usr/share/quackos/suite-versions.txt | cut -d' ' -f2)"
+python3 -m venv /opt/ducknet
+/opt/ducknet/bin/pip install --no-cache-dir "https://github.com/Quezka/ducknet/archive/refs/tags/${tag}.tar.gz"
+ln -sf /opt/ducknet/bin/ducknet /usr/local/bin/ducknet

@@ -38,16 +38,18 @@ jobs:
             set -euo pipefail
             apt-get update
             apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso \
-                ca-certificates curl jq git sudo
+                ca-certificates curl jq git sudo python3
             ./build.sh
           '
           sudo chown -R "$USER": out
           ls -lh out
       - name: Boot the ISO in QEMU
         run: |
+          sudo apt-get update
           sudo apt-get install -y qemu-system-x86 xorriso
           sudo scripts/boot-test.sh out/quackos-*-amd64.iso
       - uses: actions/upload-artifact@v4
+        if: always() && hashFiles('out/*.iso') != ''     # keep the image even if the boot test failed
         with:
           name: QuackOS-ISO
           retention-days: 7

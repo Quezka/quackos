@@ -10,7 +10,7 @@ if [ "$(id -u)" -ne 0 ]; then
     echo "QuackOS needs root to build: run  sudo ./build.sh" >&2
     exit 1
 fi
-for tool in lb debootstrap mksquashfs xorriso; do
+for tool in lb debootstrap mksquashfs xorriso python3; do
     command -v "$tool" >/dev/null || { echo "Missing '$tool'. On Debian: apt install live-build debootstrap squashfs-tools xorriso" >&2; exit 1; }
 done
 if [ "${1:-}" = "--clean" ]; then
@@ -18,6 +18,7 @@ if [ "${1:-}" = "--clean" ]; then
 fi
 
 VERSION="$(cat VERSION)"
+python3 scripts/fetch-suite.py     # the Quezka apps, checksum-verified, into config/packages.chroot/
 lb config
 lb build
 
