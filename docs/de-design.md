@@ -85,7 +85,8 @@ notifiche nostre, Mission Control, schermata di blocco nostra: sono la fase 2 (s
 - **Barra:** accanto al logo c'è il nome dell'app in primo piano. **Dock:** pallino sotto le app aperte, le app aperte non
   fissate compaiono dopo quelle fissate, un clic su un'app aperta la porta in primo piano (prima una finestra minimizzata,
   poi la successiva), su un'app chiusa la avvia.
-- **Clic che passano:** la finestra del dock ha una maschera di input: solo il vetro prende i clic finché il mouse non ci
-  passa sopra. Non provato su QtWayland vero.
+- **Clic che passano:** provato e **scartato**. Una maschera di input (`QWindow.setMask`) faceva sì che Qt non ridisegnasse
+  più fuori dalla maschera: il dock aveva riquadri neri (visto in QEMU). La parte trasparente sopra il vetro, alta circa 50 px,
+  intercetta quindi i clic; da risolvere in un altro modo (finestra che si ridimensiona, o compositor nostro).
 - **Ancora nessun test contro un compositor vero** per il client Wayland: la logica è testata, il collegamento no.
 - Manca ancora: menu globale (dbusmenu), centro di controllo, notifiche nostre, Mission Control.

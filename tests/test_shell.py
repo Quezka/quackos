@@ -308,8 +308,15 @@ class SessionFilesTest(unittest.TestCase):
         lists = "\n".join(p.read_text() for p in (ROOT / "config/package-lists").glob("*.list.chroot"))
         for pkg in ("labwc", "swaybg", "mako-notifier", "fuzzel", "foot", "swaylock", "swayidle", "wlopm", "grim", "slurp",
                     "wl-clipboard", "brightnessctl", "xwayland", "qml6-module-org-kde-layershell", "qt6-wayland",
-                    "python3-pyside6.qtquick", "python3-pywayland", "xdg-desktop-portal-wlr", "xdg-desktop-portal-gtk"):
+                    "python3-pyside6.qtquick", "python3-pywayland", "python3-cffi-backend", "xdg-desktop-portal-wlr", "xdg-desktop-portal-gtk"):
             self.assertRegex(lists, rf"(?m)^{pkg}$", pkg)
+
+    def test_dock_does_not_use_a_window_mask(self):
+        """QtWayland stops repainting outside setMask: the dock got black patches (seen in QEMU, 2026-10-14)."""
+        for path in (ROOT / "shell/quackshell").rglob("*"):
+            if path.suffix in (".py", ".qml"):
+                self.assertNotIn("setMask", path.read_text(), str(path))
+                self.assertNotIn("inputRegion", path.read_text(), str(path))
 
     def test_dev_versions_are_published_as_prereleases(self):
         wf = (ROOT / ".github/workflows/build.yml").read_text()

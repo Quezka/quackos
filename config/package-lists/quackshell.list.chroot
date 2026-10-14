@@ -19,6 +19,8 @@ xdg-desktop-portal-wlr
 xdg-desktop-portal-gtk
 # the shell: Qt Quick over layer-shell; pywayland follows the open windows (wlr-foreign-toplevel-management)
 python3-pywayland
+# python3-pywayland imports _cffi_backend but does not depend on it (found in QEMU: 'No module named pywayland._ffi')
+python3-cffi-backend
 python3-pyside6.qtcore
 python3-pyside6.qtgui
 python3-pyside6.qtqml

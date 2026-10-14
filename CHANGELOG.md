@@ -1,6 +1,10 @@
 # Changelog
 
-## [0.2.0-dev2] - 2026-10-14 (test build, pre-release)
+## [0.2.0-dev3] - 2026-10-14 (local test build, not released)
+
+- Fix: `python3-cffi-backend` added (pywayland imports it but Debian's package does not depend on it, so the dock had no window list). Fix: the dock input mask is gone (QtWayland stopped repainting outside it: black patches). Found by booting the ISO in QEMU.
+
+## [0.2.0-dev2] - 2026-10-14 (local test build)
 
 - Boot parameter `quackos.session=quackos` logs the live user straight into the new desktop (and `noautologin` shows the login screen with the session menu). The session script writes `~/.cache/quackos-session.log` and retries labwc with the software renderer. `scripts/local-build.sh` and `scripts/try-iso.sh` build and boot the ISO on a laptop.
 

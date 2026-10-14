@@ -11,7 +11,7 @@ from PySide6.QtQml import QQmlApplicationEngine
 
 from ..app.dock_service import DockService
 from ..infra import process, xdg
-from .models import DockModel, InputRegion, Launcher, ThemeIcons
+from .models import DockModel, Launcher, ThemeIcons
 from .windows import WindowWatcher
 
 QML = Path(__file__).parent / "qml"
@@ -66,8 +66,6 @@ def main(argv=None):
     ctx.setContextProperty("launcher", launcher)
     ctx.setContextProperty("barHeight", BAR_HEIGHT)
     ctx.setContextProperty("windowWatcher", watcher)
-    inputs = InputRegion()
-    ctx.setContextProperty("inputRegion", inputs)
     watcher.windowsChanged.connect(model.setWindows)
     if layer:  # a plain run inside another desktop has no labwc to ask
         watcher.start()

@@ -1,6 +1,6 @@
 """Qt side of the dock: a list model over the DockService and an icon provider backed by the icon theme."""
-from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QRect, QSize, Qt, Slot
-from PySide6.QtGui import QIcon, QImage, QPixmap, QRegion
+from PySide6.QtCore import QAbstractListModel, QModelIndex, QObject, QSize, Qt, Slot
+from PySide6.QtGui import QIcon, QImage, QPixmap
 from PySide6.QtQuick import QQuickImageProvider
 
 
@@ -80,18 +80,3 @@ class Launcher(QObject):
     def openLauncher(self):
         self._run(["fuzzel"])
 
-
-class InputRegion(QObject):
-    """Clicks outside the given rectangle go through the window to whatever is below (QtWayland turns a window mask
-    into the surface's input region). The dock window is taller than its glass: without this its empty top
-    would swallow clicks."""
-
-    @Slot(QObject, int, int, int, int)
-    def set(self, window, x, y, width, height):
-        if window is not None:
-            window.setMask(QRegion(QRect(x, y, width, height)))
-
-    @Slot(QObject)
-    def clear(self, window):
-        if window is not None:
-            window.setMask(QRegion())
