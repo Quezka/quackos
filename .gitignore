@@ -24,3 +24,4 @@ __pycache__/
 /config/packages.chroot/
 /config/includes.chroot_after_packages/usr/share/quackos/suite-versions.txt
 /config/includes.chroot_after_packages/usr/lib/quackos/shell/
+/.quackos-works

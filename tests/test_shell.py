@@ -268,6 +268,20 @@ class SessionFilesTest(unittest.TestCase):
             self.assertEqual(subprocess.run(["bash", "-n", str(path)]).returncode, 0, name)
         self.assertIn("--privileged", (ROOT / "scripts/local-build.sh").read_text())
 
+    def test_local_build_cleans_up_but_keeps_the_cache_until_a_build_works(self):
+        inner = (ROOT / "scripts/container-build.sh").read_text()
+        self.assertIn("trap cleanup EXIT", inner)            # runs on failure too
+        for gone in ("/build/chroot", "/build/binary", "/build/.build"):
+            self.assertIn(gone, inner)
+        self.assertIn("/work/.quackos-works", inner)
+        self.assertIn("rm -rf /build/cache", inner)
+        self.assertLess(inner.index("rm -rf /build/chroot"), inner.index("rm -rf /build/cache"))
+        outer = (ROOT / "scripts/local-build.sh").read_text()
+        self.assertIn("image prune", outer)
+        self.assertIn("tail -n +3", outer)                   # only the 2 newest ISOs stay
+        self.assertEqual(subprocess.run(["bash", "-n", str(ROOT / "scripts/container-build.sh")]).returncode, 0)
+        self.assertIn("/.quackos-works", (ROOT / ".gitignore").read_text())
+
     def test_labwc_rc_is_valid_xml_with_traffic_lights_on_the_left(self):
         import xml.dom.minidom
         rc = self.INC / "usr/share/quackos/labwc/rc.xml"

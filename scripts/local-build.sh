@@ -3,8 +3,14 @@
 #   scripts/local-build.sh            gzip squashfs: ~3x faster, ISO a bit bigger: for testing
 #   QUACKOS_COMPRESSION=xz scripts/local-build.sh     what a release uses
 # Needs docker (apt install docker.io) and ~25 GB free. If you are not in the `docker` group it asks for your
-# password through pkexec. The build tree lives in the docker volume `quackos-build` (it keeps the downloaded
-# packages, so the second build is much faster); the ISO lands in ./out/ and is yours.
+# password through pkexec. The ISO lands in ./out/ and is yours.
+#
+# Cleanup (automatic, after every build, even a failed one):
+#   - the build tree in the docker volume `quackos-build` (chroot, ISO tree: several GB) is removed, but its package
+#     cache is KEPT so the next build is fast, until you create an empty file `.quackos-works` in the repo (meaning
+#     "we have a working build"): then the cache goes too;
+#   - dangling docker images are pruned (the debian:trixie base image is kept);
+#   - only the 2 newest ISOs stay in ./out/.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -22,21 +28,22 @@ if command -v gh >/dev/null && token="$(gh auth token 2>/dev/null)" && [ -n "$to
 fi
 echo "QUACKOS_COMPRESSION=${QUACKOS_COMPRESSION:-gzip}" >> "$env_file"
 
+status=0
 "${docker[@]}" run --rm --privileged --env-file "$env_file" \
     -v quackos-build:/build -v "$PWD":/work:ro -v "$PWD/out":/out \
     -e HOST_UID="$(id -u)" -e HOST_GID="$(id -g)" \
-    debian:trixie bash -c '
-    set -euo pipefail
-    apt-get update
-    apt-get install -y --no-install-recommends live-build debootstrap squashfs-tools xorriso rsync \
-        ca-certificates curl jq git sudo python3
-    # fresh sources every time, but keep the package cache and the previous chroot download state
-    rsync -a --delete --exclude=/.git --exclude=/out --exclude=/cache --exclude=/chroot --exclude=/binary \
-        --exclude=/.build --exclude="/live-image-*" --exclude="/*.iso" /work/ /build/
-    cd /build
-    lb clean >/dev/null 2>&1 || true
-    ./build.sh
-    cp out/quackos-*-amd64.iso out/quackos-*-amd64.iso.sha256 /out/
-    chown "$HOST_UID:$HOST_GID" /out/quackos-*-amd64.iso /out/quackos-*-amd64.iso.sha256
-'
+    debian:trixie bash /work/scripts/container-build.sh || status=$?
+
+# host side of the cleanup
+"${docker[@]}" image prune -f >/dev/null 2>&1 || true
+# a failed build can leave a half-written ISO behind
+[ "$status" -eq 0 ] || rm -f out/*.partial
+# keep the two newest ISOs (and their checksums)
+ls -1t out/quackos-*-amd64.iso 2>/dev/null | tail -n +3 | while read -r old; do
+    rm -f "$old" "$old.sha256"
+done
+if [ "$status" -ne 0 ]; then
+    echo "build FAILED (exit $status)" >&2
+    exit "$status"
+fi
 ls -lh out/quackos-*-amd64.iso
