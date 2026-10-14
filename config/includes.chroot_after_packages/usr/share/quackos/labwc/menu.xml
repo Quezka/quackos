@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- Right click on the desktop. Until the shell has its own power menu this is the way to log out. -->
+<openbox_menu>
+  <menu id="root-menu">
+    <item label="Terminal"><action name="Execute" command="foot" /></item>
+    <item label="Files"><action name="Execute" command="dolphin" /></item>
+    <item label="Settings"><action name="Execute" command="systemsettings" /></item>
+    <separator />
+    <item label="Lock"><action name="Execute" command="swaylock -f -c 111214" /></item>
+    <item label="Log out"><action name="Exit" /></item>
+    <item label="Restart"><action name="Execute" command="systemctl reboot" /></item>
+    <item label="Shut down"><action name="Execute" command="systemctl poweroff" /></item>
+  </menu>
+</openbox_menu>

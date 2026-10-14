@@ -1,0 +1,6 @@
+[Desktop Entry]
+Name=QuackOS
+Comment=The QuackOS desktop (labwc and the QuackOS shell)
+Exec=/usr/local/bin/quackos-session
+Type=Application
+DesktopNames=labwc;wlroots

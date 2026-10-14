@@ -1,0 +1,5 @@
+#!/bin/sh
+# QuackOS Wayland session: the labwc compositor with our own configuration. The shell (bar, dock) and the
+# wallpaper start from the autostart file in the same directory. Log: ~/.cache/quackos-session.log
+mkdir -p "$HOME/.cache"
+exec labwc -C /usr/share/quackos/labwc >"$HOME/.cache/quackos-session.log" 2>&1

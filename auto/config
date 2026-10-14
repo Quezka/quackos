@@ -14,6 +14,11 @@ COMPRESSION="${QUACKOS_COMPRESSION:-xz}"
 mkdir -p config/includes.chroot_after_packages/usr/share/quackos
 cp VERSION config/includes.chroot_after_packages/usr/share/quackos/version
 cp suite/apps.list config/includes.chroot_after_packages/usr/share/quackos/apps.list
+# the desktop shell (shell/quackshell) is installed into the image the same way
+rm -rf config/includes.chroot_after_packages/usr/lib/quackos/shell
+mkdir -p config/includes.chroot_after_packages/usr/lib/quackos/shell
+cp -r shell/quackshell config/includes.chroot_after_packages/usr/lib/quackos/shell/quackshell
+find config/includes.chroot_after_packages/usr/lib/quackos/shell -name __pycache__ -type d -prune -exec rm -rf {} +
 
 # firmware: --firmware-chroot false on purpose. With true, live-build installs EVERY firmware package some kernel module
 # wants (Marvell switch ASICs 61 MB, Nvidia datacenter GSP 39 MB, server NICs, TV tuners, old Wi-Fi dongles: ~110 MB

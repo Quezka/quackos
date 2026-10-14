@@ -44,6 +44,23 @@ MUST_EXIST = {
     "usr/share/applications/io.github.quezka.Bivouac.desktop": "Bivouac launcher",
     "usr/share/applications/io.github.quezka.Natter.desktop": "Natter launcher",
     "usr/bin/firefox-esr": "the regular web browser",
+    # the QuackOS desktop session (labwc + our own shell), docs/de-design.md
+    "usr/bin/labwc": "the compositor of the QuackOS session",
+    "usr/share/wayland-sessions/quackos.desktop": "the QuackOS session SDDM can start",
+    "usr/local/bin/quackos-session": "the session script", "usr/local/bin/quackos-shell": "the shell launcher",
+    "usr/lib/quackos/shell/quackshell/__main__.py": "the shell code",
+    "usr/lib/quackos/shell/quackshell/presentation/qml/main_layer.qml": "the shell's QML",
+    "usr/share/quackos/labwc/rc.xml": "compositor configuration",
+    "usr/share/quackos/labwc/autostart": "what the session starts",
+    "usr/share/themes/QuackOS/labwc/themerc": "window theme",
+    "usr/share/themes/QuackOS/labwc/close-active.svg": "traffic-light buttons",
+    "usr/bin/swaybg": "wallpaper", "usr/bin/mako": "notifications", "usr/bin/fuzzel": "launcher",
+    "usr/bin/foot": "terminal", "usr/bin/swaylock": "lock screen",
+    "usr/lib/python3/dist-packages/PySide6/QtQuick.abi3.so": "PySide6 Qt Quick (the shell)",
+    "usr/lib/x86_64-linux-gnu/qt6/qml/org/kde/layershell/qmldir": "layer-shell QML module (bar and dock)",
+    "usr/lib/x86_64-linux-gnu/qt6/qml/QtQuick/Window/qmldir": "QtQuick.Window QML module",
+    "usr/lib/x86_64-linux-gnu/libLayerShellQtInterface.so.6": "layer-shell for Qt",
+    "usr/lib/x86_64-linux-gnu/libexec/polkit-kde-authentication-agent-1": "polkit prompt used by the session",
 }
 # paths that must NOT be there
 MUST_NOT_EXIST = {

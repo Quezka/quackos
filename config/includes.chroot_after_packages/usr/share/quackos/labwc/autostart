@@ -1,0 +1,18 @@
+# Started by labwc at the beginning of every QuackOS session.
+# The session's environment must reach D-Bus and systemd, or portals and apps started by D-Bus open on nothing.
+dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP XDG_SESSION_DESKTOP XCURSOR_THEME XCURSOR_SIZE &
+
+# wallpaper
+swaybg -i /usr/share/backgrounds/quackos/quackos.png -m fill >/dev/null 2>&1 &
+
+# the shell: top bar and dock
+quackos-shell >/dev/null 2>&1 &
+
+# notifications (mako until the shell has its own notification daemon)
+mako >/dev/null 2>&1 &
+
+# polkit prompt (installer, mounting, settings); the KDE one is already in the image while Plasma is
+/usr/lib/x86_64-linux-gnu/libexec/polkit-kde-authentication-agent-1 >/dev/null 2>&1 &
+
+# lock after 10 minutes, screen off after 15
+swayidle -w timeout 600 'swaylock -f -c 111214' timeout 900 'wlopm --off \*' resume 'wlopm --on \*' before-sleep 'swaylock -f -c 111214' >/dev/null 2>&1 &

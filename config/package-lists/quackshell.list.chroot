@@ -1,0 +1,33 @@
+# The QuackOS desktop session (docs/de-design.md, phase 1): labwc compositor + our own shell (PySide6/QML).
+# Every name below was checked against the Debian 13 (trixie) Packages index on 2026-10-14.
+labwc
+# (Xwayland is already listed in another list: it runs the X11 apps of the suite)
+swaybg
+swayidle
+swaylock
+wlopm
+mako-notifier
+fuzzel
+foot
+grim
+slurp
+wl-clipboard
+brightnessctl
+# portals: screen sharing on wlroots, file dialogs from GTK
+xdg-desktop-portal
+xdg-desktop-portal-wlr
+xdg-desktop-portal-gtk
+# the shell: Qt Quick over layer-shell
+python3-pyside6.qtcore
+python3-pyside6.qtgui
+python3-pyside6.qtqml
+python3-pyside6.qtquick
+qt6-wayland
+qt6-svg-plugins
+qml6-module-org-kde-layershell
+qml6-module-qtquick
+qml6-module-qtquick-window
+qml6-module-qtqml
+qml6-module-qtqml-workerscript
+qml6-module-qtquick-templates
+qml6-module-qtquick-layouts

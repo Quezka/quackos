@@ -1,0 +1,3 @@
+#!/bin/sh
+# The QuackOS shell (top bar and dock); the code lives in /usr/lib/quackos/shell.
+PYTHONPATH=/usr/lib/quackos/shell exec python3 -m quackshell "$@"

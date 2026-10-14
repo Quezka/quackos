@@ -1,5 +1,9 @@
 # Changelog
 
+## [Unreleased] - desktop of our own (branch de-work)
+
+- A second session, "QuackOS", next to Plasma: the labwc compositor with our own shell (top bar and magnifying dock, PySide6/QML on layer-shell), traffic-light window buttons on the left, Super as Command. Plasma stays the default for now; the plan is in `docs/de-design.md`. Not tested on a real screen yet.
+
 ## [0.1.2] - 2026-10-14
 
 - macOS-like look: a thin menu bar on top with the global menu, a floating centred dock at the bottom (with the Quezka suite pinned and the trash), Inter as the interface font, Bibata cursors, window buttons on the left, blur. The first time it is seen on a screen is on real hardware: nothing in CI renders it.

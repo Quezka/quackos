@@ -1,0 +1,51 @@
+<?xml version="1.0"?>
+<!-- QuackOS session configuration for labwc 0.8 (the compositor). Own file, used with `labwc -C`. -->
+<labwc_config>
+
+  <core>
+    <gap>6</gap>
+  </core>
+
+  <theme>
+    <name>QuackOS</name>
+    <!-- macOS order: close, minimise, zoom on the left; the colon is mandatory -->
+    <titlebar>
+      <layout>close,iconify,max:</layout>
+      <showTitle>yes</showTitle>
+    </titlebar>
+    <cornerRadius>12</cornerRadius>
+    <dropShadows>yes</dropShadows>
+    <font name="Inter" size="10" />
+  </theme>
+
+  <libinput>
+    <device category="touchpad">
+      <naturalScroll>yes</naturalScroll>
+      <tap>yes</tap>
+      <tapAndDrag>yes</tapAndDrag>
+      <disableWhileTyping>yes</disableWhileTyping>
+    </device>
+  </libinput>
+
+  <keyboard>
+    <default />
+    <!-- Super is the Command key -->
+    <keybind key="W-space"><action name="Execute" command="fuzzel" /></keybind>
+    <keybind key="W-Return"><action name="Execute" command="foot" /></keybind>
+    <keybind key="W-e"><action name="Execute" command="dolphin" /></keybind>
+    <keybind key="W-q"><action name="Close" /></keybind>
+    <keybind key="W-m"><action name="Iconify" /></keybind>
+    <keybind key="W-l"><action name="Execute" command="swaylock -f -c 111214" /></keybind>
+    <keybind key="Print"><action name="Execute" command="sh -c 'grim -g &quot;$(slurp)&quot; - | wl-copy'" /></keybind>
+    <keybind key="XF86_MonBrightnessUp"><action name="Execute" command="brightnessctl set 5%+" /></keybind>
+    <keybind key="XF86_MonBrightnessDown"><action name="Execute" command="brightnessctl set 5%-" /></keybind>
+    <keybind key="XF86_AudioRaiseVolume"><action name="Execute" command="wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+" /></keybind>
+    <keybind key="XF86_AudioLowerVolume"><action name="Execute" command="wpctl set-volume @DEFAULT_AUDIO_SINK@ 5%-" /></keybind>
+    <keybind key="XF86_AudioMute"><action name="Execute" command="wpctl set-mute @DEFAULT_AUDIO_SINK@ toggle" /></keybind>
+  </keyboard>
+
+  <mouse>
+    <default />
+  </mouse>
+
+</labwc_config>

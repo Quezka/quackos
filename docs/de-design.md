@@ -26,8 +26,8 @@ Questo documento è il piano. Lavoro sul ramo `de-work`; `main` resta la 0.1.x (
 
 ## Cosa NON si può avere con labwc (onestà)
 
-labwc non fa **sfocatura dello sfondo** (blur), **animazioni di finestra** (genie, zoom) né **ombre morbide** di livello macOS.
-Con labwc possiamo arrivare a circa l'80% dell'aspetto. Per il 100% serve il **compositor nostro** (fase 4). La 0.1.2 ha già
+labwc ha angoli arrotondati e ombre (`cornerRadius`, `dropShadows`, già nel nostro tema), ma non fa **sfocatura dello sfondo** (blur) né
+**animazioni di finestra** (genie, zoom). Con labwc possiamo arrivare a circa l'80% dell'aspetto. Per il 100% serve il **compositor nostro** (fase 4). La 0.1.2 ha già
 «blur» nel tema di KWin: passando a labwc si perde finché non c'è il compositor nostro.
 
 ## Fasi
@@ -55,3 +55,24 @@ Con labwc possiamo arrivare a circa l'80% dell'aspetto. Per il 100% serve il **c
 Ogni nome di pacchetto si verifica sull'indice vero di Debian prima di scriverlo (`Packages.xz`); `--apt-recommends false` →
 ogni Recommends necessario si elenca a mano; un tag `vX.Y.Z` è una release pubblica: serve il «sì» dell'autore ogni volta.
 Stringhe in italiano, russo e inglese; test per ogni pezzo di logica pura.
+
+## Stato della fase 1 (14 ottobre 2026, ramo `de-work`)
+
+Scritto e **testato in modo statico** (84 test, più un test di avvio QML senza schermo con PySide6 6.11 locale):
+- `shell/quackshell/`: shell in architettura pulita (`domain` puro → `app` → `infra`, `presentation` = Qt/QML). Barra in alto
+  (logo che apre il launcher, orologio) e dock con ingrandimento al passaggio del mouse; le app fissate sono le 6 della
+  suite + Dolphin, Konsole, Impostazioni (lista propria in `~/.config/quackos/dock.json`). Senza layer-shell parte in
+  finestre normali (`QUACKSHELL_PLAIN=1`), così si prova anche dentro un altro desktop.
+- Sessione `QuackOS` per SDDM (`/usr/share/wayland-sessions/quackos.desktop`) → `quackos-session` → labwc con la nostra
+  configurazione (`/usr/share/quackos/labwc/`): tema con i tre pulsanti colorati a sinistra, scorciatoie con Super come Command
+  (Super+Spazio launcher fuzzel, Super+Q chiude, Super+L blocca), tap e scroll naturale sul touchpad, menu sul desktop con
+  Esci / Riavvia / Spegni, notifiche con mako, sfondo con swaybg, blocco/spegnimento schermo con swayidle.
+- Pacchetti in `config/package-lists/quackshell.list.chroot`, tutti verificati sull'indice di Debian 13.
+
+**Non provato su una sessione vera:** gli attributi `LayerShell.Window.*` in QML (nomi dedotti dalle proprietà C++ della
+libreria, perché il `.qmltypes` del pacchetto è vuoto), l'avvio di labwc dalla sessione SDDM, il polkit agent dentro labwc,
+la barra che riserva davvero lo spazio. La finestra del dock è alta 128 px: la parte trasparente sopra il vetro assorbe i
+click (da sistemare con una maschera di input).
+
+**Non c'è ancora:** nome dell'app attiva e menu globale nella barra, pallini delle app aperte nel dock, centro di controllo,
+notifiche nostre, Mission Control, schermata di blocco nostra: sono la fase 2 (servono i protocolli `foreign-toplevel`).
