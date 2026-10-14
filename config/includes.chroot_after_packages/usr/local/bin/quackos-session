@@ -1,5 +1,33 @@
 #!/bin/sh
 # QuackOS Wayland session: the labwc compositor with our own configuration. The shell (bar, dock) and the
-# wallpaper start from the autostart file in the same directory. Log: ~/.cache/quackos-session.log
+# wallpaper start from the autostart file in the same directory.
+#
+# Log of everything below: ~/.cache/quackos-session.log (if the screen stays black or you land on the login screen
+# again, that file says why). labwc is started twice at most: the second time with the software renderer, which
+# works on GPUs/drivers where the first one fails.
+LOG="$HOME/.cache/quackos-session.log"
 mkdir -p "$HOME/.cache"
-exec labwc -C /usr/share/quackos/labwc >"$HOME/.cache/quackos-session.log" 2>&1
+: > "$LOG"
+note() { printf '%s\n' "$*" >> "$LOG"; }
+
+note "== QuackOS session $(date '+%F %T')"
+note "user=$(id -un) groups=$(id -Gn) vt=${XDG_VTNR:-?} session=${XDG_SESSION_ID:-?} type=${XDG_SESSION_TYPE:-?} runtime=${XDG_RUNTIME_DIR:-MISSING}"
+note "dri: $(ls /dev/dri 2>&1 | tr '\n' ' ')"
+note "labwc: $(labwc --version 2>&1 | head -1)"
+
+# try LABEL [VAR=value ...]: true when labwc ran for at least 10 s (a normal log out), false when it died at startup
+try() {
+    label="$1"; shift
+    note "== starting labwc ($label)"
+    started=$(date +%s)
+    env "$@" labwc -C /usr/share/quackos/labwc >> "$LOG" 2>&1
+    code=$?
+    seconds=$(( $(date +%s) - started ))
+    note "== labwc exited with code $code after $seconds s"
+    [ "$seconds" -ge 10 ]
+}
+
+try "default renderer" && exit 0
+try "software renderer" WLR_RENDERER=pixman WLR_NO_HARDWARE_CURSORS=1 && exit 0
+note "== labwc does not start on this machine: please send this file to the author"
+exit 1

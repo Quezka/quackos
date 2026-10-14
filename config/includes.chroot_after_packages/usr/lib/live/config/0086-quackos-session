@@ -1,9 +1,13 @@
 #!/bin/sh
-# live-config component "quackos-session": log the live user into the X11 Plasma session.
+# live-config component "quackos-session": chooses the session the live user is logged into automatically.
 #
 # live-config's own sddm component (0085) writes "Session=plasma.desktop", which in Plasma 6 is the WAYLAND
 # session. X11 works on far more hardware (old GPUs, VMs, odd drivers), and a live image that does not reach the
-# desktop is worthless, so QuackOS defaults to X11. Boot with `quackos.wayland` to keep the Wayland session.
+# desktop is worthless, so QuackOS defaults to the X11 Plasma session. Boot parameters:
+#   quackos.wayland          keep the Wayland Plasma session
+#   quackos.session=NAME     log into NAME instead: quackos (the new desktop: labwc + our shell), plasma, plasmax11,
+#                            or any other file name in /usr/share/{xsessions,wayland-sessions}/NAME.desktop
+#   noautologin              (live-config's own) show the login screen, with its session menu, instead
 . /usr/lib/live/config.sh
 
 Cmdline ()
@@ -14,13 +18,21 @@ Cmdline ()
 			quackos.wayland)
 				QUACKOS_WAYLAND="true"
 				;;
+			quackos.session=*)
+				QUACKOS_SESSION="${_PARAMETER#quackos.session=}"
+				;;
 		esac
 	done
 }
 
 Init ()
 {
-	if [ "${QUACKOS_WAYLAND}" = "true" ] || [ ! -f /etc/sddm.conf ] || component_was_executed "quackos-session"
+	if [ ! -f /etc/sddm.conf ] || component_was_executed "quackos-session"
+	then
+		exit 0
+	fi
+
+	if [ "${QUACKOS_WAYLAND}" = "true" ] && [ -z "${QUACKOS_SESSION}" ]
 	then
 		exit 0
 	fi
@@ -30,6 +42,22 @@ Init ()
 
 Config ()
 {
+	if [ -n "${QUACKOS_SESSION}" ]
+	then
+		# only a plain session name that exists: a typo must not leave the autologin pointing at nothing
+		case "${QUACKOS_SESSION}" in
+			*[!a-zA-Z0-9_.-]*)
+				QUACKOS_SESSION=""
+				;;
+		esac
+		if [ -n "${QUACKOS_SESSION}" ] && { [ -f "/usr/share/xsessions/${QUACKOS_SESSION}.desktop" ] || [ -f "/usr/share/wayland-sessions/${QUACKOS_SESSION}.desktop" ]; }
+		then
+			sed -i "s/^Session=.*\$/Session=${QUACKOS_SESSION}.desktop/" /etc/sddm.conf
+			touch /var/lib/live/config/quackos-session
+			return 0
+		fi
+	fi
+
 	sed -i 's/^Session=plasma\.desktop$/Session=plasmax11.desktop/' /etc/sddm.conf
 	touch /var/lib/live/config/quackos-session
 }

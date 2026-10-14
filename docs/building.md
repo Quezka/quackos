@@ -18,6 +18,19 @@ docker run --rm -it --privileged -v "$PWD":/work -w /work debian:trixie bash
 # dentro: apt update && apt install -y live-build debootstrap squashfs-tools xorriso curl jq git && ./build.sh
 ```
 
+## In locale, con un container (Ubuntu e altre distro)
+
+```sh
+sudo apt install docker.io qemu-system-x86
+scripts/local-build.sh                       # ISO in out/ (gzip: per le prove; QUACKOS_COMPRESSION=xz per una release)
+scripts/try-iso.sh out/quackos-*-amd64.iso quackos.session=quackos
+```
+
+`local-build.sh` usa un volume docker (`quackos-build`) che ricorda i pacchetti scaricati: la seconda build è molto più
+veloce. `try-iso.sh` avvia la ISO in QEMU con i parametri di avvio che scegli e una console seriale nel terminale
+(utente `quack`, password `live`). Parametri utili: `quackos.session=quackos` (il nuovo desktop), `quackos.session=plasmax11`,
+`quackos.wayland`, `noautologin` (mostra il login con il menu delle sessioni).
+
 ## Con la CI (consigliato)
 
 `.github/workflows/build.yml` fa tutto: test statici, build in `debian:trixie`, avvio in QEMU, caricamento della ISO

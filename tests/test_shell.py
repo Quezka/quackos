@@ -248,6 +248,26 @@ class SessionFilesTest(unittest.TestCase):
             self.assertEqual(subprocess.run(["sh", "-n", str(path)]).returncode, 0, name)
         self.assertIn("labwc -C /usr/share/quackos/labwc", (self.INC / "usr/local/bin/quackos-session").read_text())
 
+    def test_session_script_logs_and_retries_with_the_software_renderer(self):
+        text = (self.INC / "usr/local/bin/quackos-session").read_text()
+        for needle in ("quackos-session.log", "WLR_RENDERER=pixman", "WLR_NO_HARDWARE_CURSORS=1", "labwc -C /usr/share/quackos/labwc"):
+            self.assertIn(needle, text)
+        self.assertLess(text.index('try "default renderer"'), text.index('try "software renderer"'))
+
+    def test_boot_parameter_picks_the_autologin_session(self):
+        text = (self.INC / "usr/lib/live/config/0086-quackos-session").read_text()
+        self.assertIn("quackos.session=*)", text)
+        self.assertEqual(subprocess.run(["sh", "-n", str(self.INC / "usr/lib/live/config/0086-quackos-session")]).returncode, 0)
+        # a name with a slash or a space must never reach sed
+        self.assertIn("*[!a-zA-Z0-9_.-]*)", text)
+
+    def test_build_and_try_scripts_exist_and_parse(self):
+        for name in ("local-build.sh", "try-iso.sh"):
+            path = ROOT / "scripts" / name
+            self.assertTrue(os.access(path, os.X_OK), name)
+            self.assertEqual(subprocess.run(["bash", "-n", str(path)]).returncode, 0, name)
+        self.assertIn("--privileged", (ROOT / "scripts/local-build.sh").read_text())
+
     def test_labwc_rc_is_valid_xml_with_traffic_lights_on_the_left(self):
         import xml.dom.minidom
         rc = self.INC / "usr/share/quackos/labwc/rc.xml"
