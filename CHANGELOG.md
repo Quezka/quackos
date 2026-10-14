@@ -1,8 +1,8 @@
 # Changelog
 
-## [Unreleased] - desktop of our own (branch de-work)
+## [0.2.0-dev1] - 2026-10-14 (test build, pre-release)
 
-- A second session, "QuackOS", next to Plasma: the labwc compositor with our own shell (top bar and magnifying dock, PySide6/QML on layer-shell), traffic-light window buttons on the left, Super as Command. Plasma stays the default for now; the plan is in `docs/de-design.md`. Not tested on a real screen yet.
+- A second session, "QuackOS", next to Plasma: the labwc compositor with our own shell (top bar and magnifying dock, PySide6/QML on layer-shell), traffic-light window buttons on the left, Super as Command. Plasma stays the default for now; the plan is in `docs/de-design.md`. Not tested on a real screen yet. The bar shows the focused app and the dock marks open apps and raises them on click (wlr-foreign-toplevel); clicks pass through the empty part of the dock window.
 
 ## [0.1.2] - 2026-10-14
 

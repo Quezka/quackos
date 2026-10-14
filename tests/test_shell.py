@@ -10,8 +10,8 @@ ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "shell"))
 
 from quackshell.app.dock_service import DockService  # noqa: E402
-from quackshell.domain import desktop_entry, dock  # noqa: E402
-from quackshell.infra import xdg  # noqa: E402
+from quackshell.domain import desktop_entry, dock, windows as win  # noqa: E402
+from quackshell.infra import toplevels, xdg  # noqa: E402
 
 QUIRE = """# comment
 [Desktop Entry]
@@ -74,11 +74,113 @@ class DockTest(unittest.TestCase):
         e = self.entry("x.desktop")
         launched = []
         svc = DockService(lambda: {"x.desktop": e}, lambda: ["x.desktop"], launched.append)
-        self.assertEqual(svc.items(), [e])
-        svc.open(e)
+        items = svc.items()
+        self.assertEqual([i.entry for i in items], [e])
+        svc.open(items[0])
         self.assertEqual(launched, [e])
         none = DockService(lambda: {"x.desktop": e}, lambda: None, launched.append)
         self.assertEqual(none.items(), [])  # defaults are not installed here
+
+    def test_running_apps_get_a_dot_and_a_click_raises_instead_of_launching(self):
+        q = desktop_entry.DesktopEntry("io.github.quezka.Quire.desktop", "Quire", "q", "/opt/quire/Quire")
+        launched, raised = [], []
+        svc = DockService(lambda: {q.desktop_id: q}, lambda: [q.desktop_id], launched.append, raised.append)
+        items = svc.items([win.Window(7, "t", "io.github.quezka.Quire")])
+        self.assertEqual((items[0].running, items[0].pinned), (1, True))
+        svc.open(items[0])
+        self.assertEqual((launched, raised), ([], [7]))
+
+    def test_unpinned_running_apps_follow_the_pins_and_unknown_ones_are_grouped(self):
+        q = desktop_entry.DesktopEntry("q.desktop", "Quire", "q", "quire")
+        k = desktop_entry.DesktopEntry("k.desktop", "Kate", "k", "kate")
+        svc = DockService(lambda: {"q.desktop": q, "k.desktop": k}, lambda: ["q.desktop"], lambda e: None)
+        items = svc.items([win.Window(1, app_id="kate"), win.Window(2, app_id="weird"), win.Window(3, app_id="weird")])
+        self.assertEqual([(i.entry.name, i.pinned, i.running) for i in items],
+                         [("Quire", True, 0), ("Kate", False, 1), ("weird", False, 2)])
+
+
+class WindowsTest(unittest.TestCase):
+    E = [desktop_entry.DesktopEntry("io.github.quezka.Quire.desktop", "Quire", "q", "/opt/quire/Quire"),
+         desktop_entry.DesktopEntry("org.kde.dolphin.desktop", "Files", "d", "dolphin %u"),
+         desktop_entry.DesktopEntry("fx.desktop", "Firefox", "f", "firefox-esr %u", wm_class="Navigator")]
+
+    def test_app_id_matches_the_id_its_last_segment_the_wm_class_or_the_command(self):
+        for app_id, want in (("io.github.quezka.Quire", "Quire"), ("quire", "Quire"), ("Quire", "Quire"),
+                             ("org.kde.dolphin", "Files"), ("dolphin", "Files"), ("navigator", "Firefox"),
+                             ("firefox-esr", "Firefox")):
+            self.assertEqual(win.entry_for(app_id, self.E).name, want, app_id)
+        self.assertIsNone(win.entry_for("nothing", self.E))
+        self.assertIsNone(win.entry_for("", self.E))
+
+    def test_active_name_is_the_focused_visible_window(self):
+        ws = [win.Window(1, "a", "dolphin"), win.Window(2, "page", "navigator", activated=True)]
+        self.assertEqual(win.active_name(ws, self.E), "Firefox")
+        self.assertEqual(win.active_name([win.Window(3, "t", "zzz", activated=True)], self.E), "zzz")
+        self.assertEqual(win.active_name([win.Window(4, "t", "zzz", activated=True, minimized=True)], self.E), "")
+        self.assertEqual(win.active_name([], self.E), "")
+
+    def test_next_to_raise_prefers_minimized_then_cycles(self):
+        a, b, c = win.Window(1), win.Window(2, activated=True), win.Window(3)
+        self.assertIsNone(win.next_to_raise([]))
+        self.assertEqual(win.next_to_raise([a, b, c]).id, 3)
+        self.assertEqual(win.next_to_raise([a, c, b]).id, 1)
+        self.assertEqual(win.next_to_raise([a, win.Window(9, minimized=True), b]).id, 9)
+        self.assertEqual(win.next_to_raise([a, c]).id, 1)
+
+    def test_state_array_flags(self):
+        w = win.apply_state(win.Window(1, "t", "a"), {win.ACTIVATED})
+        self.assertEqual((w.activated, w.minimized), (True, False))
+        w = win.apply_state(w, {win.MINIMIZED})
+        self.assertEqual((w.activated, w.minimized), (False, True))
+
+
+class TrackerTest(unittest.TestCase):
+    def setUp(self):
+        self.seen = []
+        self.t = toplevels.Tracker(self.seen.append)
+
+    def test_a_window_appears_only_when_done_arrives(self):
+        self.t.opened(1)
+        self.t.title(1, "Doc")
+        self.t.app_id(1, "quire")
+        self.assertEqual(self.seen, [])
+        self.t.done(1)
+        self.assertEqual([(w.title, w.app_id) for w in self.seen[-1]], [("Doc", "quire")])
+
+    def test_state_accepts_the_raw_array_and_a_list(self):
+        import struct
+        self.t.opened(1)
+        self.t.state(1, struct.pack("II", 2, 3))
+        self.t.done(1)
+        self.assertTrue(self.seen[-1][0].activated)
+        self.t.state(1, [1])
+        self.t.done(1)
+        self.assertEqual((self.seen[-1][0].activated, self.seen[-1][0].minimized), (False, True))
+
+    def test_order_is_the_order_of_first_appearance_and_closing_removes(self):
+        for i in (1, 2, 3):
+            self.t.opened(i)
+            self.t.done(i)
+        self.t.title(1, "changed")
+        self.t.done(1)
+        self.assertEqual([w.id for w in self.seen[-1]], [1, 2, 3])
+        self.t.closed(2)
+        self.assertEqual([w.id for w in self.seen[-1]], [1, 3])
+        count = len(self.seen)
+        self.t.closed(99)          # unknown, or closed before done: nothing to tell
+        self.assertEqual(len(self.seen), count)
+
+
+class ProtocolFilesTest(unittest.TestCase):
+    def test_generated_bindings_match_the_xml_and_import_the_core_from_pywayland(self):
+        out = ROOT / "shell/quackshell/infra/protocols/wlr_foreign_toplevel_management_unstable_v1"
+        xml = (ROOT / "shell/protocols/wlr-foreign-toplevel-management-unstable-v1.xml").read_text()
+        self.assertIn('name="wlr_foreign_toplevel_management_unstable_v1"', xml)
+        for f in ("zwlr_foreign_toplevel_manager_v1.py", "zwlr_foreign_toplevel_handle_v1.py", "__init__.py"):
+            text = (out / f).read_text()
+            self.assertNotIn("from ..wayland", text, f)
+        self.assertIn("from pywayland.protocol.wayland import WlSeat",
+                      (out / "zwlr_foreign_toplevel_handle_v1.py").read_text())
 
 
 class XdgTest(unittest.TestCase):
@@ -172,8 +274,13 @@ class SessionFilesTest(unittest.TestCase):
         lists = "\n".join(p.read_text() for p in (ROOT / "config/package-lists").glob("*.list.chroot"))
         for pkg in ("labwc", "swaybg", "mako-notifier", "fuzzel", "foot", "swaylock", "swayidle", "wlopm", "grim", "slurp",
                     "wl-clipboard", "brightnessctl", "xwayland", "qml6-module-org-kde-layershell", "qt6-wayland",
-                    "python3-pyside6.qtquick", "xdg-desktop-portal-wlr", "xdg-desktop-portal-gtk"):
+                    "python3-pyside6.qtquick", "python3-pywayland", "xdg-desktop-portal-wlr", "xdg-desktop-portal-gtk"):
             self.assertRegex(lists, rf"(?m)^{pkg}$", pkg)
+
+    def test_dev_versions_are_published_as_prereleases(self):
+        wf = (ROOT / ".github/workflows/build.yml").read_text()
+        self.assertIn("--prerelease", wf)
+        self.assertIn("*-*)", wf)
 
     def test_auto_config_stages_the_shell_into_the_image(self):
         text = (ROOT / "auto/config").read_text()

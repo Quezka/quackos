@@ -1,4 +1,5 @@
 import QtQuick
+import QtQuick.Window
 
 // The floating dock. Icons grow near the pointer (a bell curve over the distance to it, like macOS). The window
 // is taller than the glass so the grown icons have room; the glass sits at the bottom.
@@ -9,6 +10,15 @@ Item {
     property real spread: 70
     property real pointerX: -1000
     readonly property bool hovering: pointerX > -500
+
+    // Only the glass takes clicks until the pointer is on it; then the room above it (grown icons, tooltip) joins in.
+    function updateInput() {
+        if (!Window.window) return
+        if (hovering) inputRegion.clear(Window.window)
+        else inputRegion.set(Window.window, glass.x, glass.y, glass.width, glass.height)
+    }
+    onHoveringChanged: updateInput()
+    Component.onCompleted: updateInput()
 
     // the glass is as wide as the icons at rest, plus padding
     Rectangle {
@@ -23,6 +33,9 @@ Item {
         border.color: "#33ffffff"
         border.width: 1
         Behavior on width { NumberAnimation { duration: 120 } }
+        onXChanged: root.updateInput()
+        onYChanged: root.updateInput()
+        onWidthChanged: root.updateInput()
     }
 
     Row {
@@ -52,6 +65,14 @@ Item {
                     sourceSize: Qt.size(128, 128)
                     smooth: true
                     mipmap: true
+                }
+                Rectangle {  // the "this app is open" dot under the icon
+                    visible: model.running > 0
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    anchors.top: parent.bottom
+                    anchors.topMargin: 5
+                    width: 4; height: 4; radius: 2
+                    color: "#ecedef"
                 }
                 Rectangle {
                     visible: ma.containsMouse

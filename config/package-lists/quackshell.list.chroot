@@ -17,7 +17,8 @@ brightnessctl
 xdg-desktop-portal
 xdg-desktop-portal-wlr
 xdg-desktop-portal-gtk
-# the shell: Qt Quick over layer-shell
+# the shell: Qt Quick over layer-shell; pywayland follows the open windows (wlr-foreign-toplevel-management)
+python3-pywayland
 python3-pyside6.qtcore
 python3-pyside6.qtgui
 python3-pyside6.qtqml

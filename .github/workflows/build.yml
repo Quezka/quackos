@@ -136,12 +136,19 @@ jobs:
             note="Write it to a USB stick with Balena Etcher, KDE ISO Image Writer, or \`dd\`."
           fi
           cd ..
+          # a VERSION with a suffix (0.2.0-dev1) is a TEST build: a GitHub pre-release, so it is never "latest"
+          # (the home server mirror follows /releases/latest and keeps the last real release)
+          flags=()
+          case "$(cat VERSION)" in
+            *-*) flags=(--prerelease); kind="Test build (pre-release): it may break." ;;
+            *)   kind="Debian 13 + KDE Plasma, with the whole Quezka suite preinstalled." ;;
+          esac
           {
-            echo "QuackOS $(cat VERSION): Debian 13 + KDE Plasma, with the whole Quezka suite preinstalled."
+            echo "QuackOS $(cat VERSION): $kind"
             echo
             echo "$note"
             echo
             echo "Live user: \`quack\`, password: \`live\`. Click *Install QuackOS* on the desktop to install."
           } > notes.md
-          gh release create "$GITHUB_REF_NAME" --verify-tag --title "QuackOS $(cat VERSION)" \
+          gh release create "$GITHUB_REF_NAME" --verify-tag --title "QuackOS $(cat VERSION)" "${flags[@]}" \
             --notes-file notes.md $(printf 'out/%s ' "${files[@]}")

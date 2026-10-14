@@ -76,3 +76,16 @@ click (da sistemare con una maschera di input).
 
 **Non c'è ancora:** nome dell'app attiva e menu globale nella barra, pallini delle app aperte nel dock, centro di controllo,
 notifiche nostre, Mission Control, schermata di blocco nostra: sono la fase 2 (servono i protocolli `foreign-toplevel`).
+
+## Fase 2, primo pezzo (0.2.0-dev1)
+
+- **Elenco finestre** con il protocollo `wlr-foreign-toplevel-management` (labwc lo parla): `infra/toplevels.py` (stato dai
+  messaggi del compositor, puro e testato in `Tracker`; il client Wayland è sottile sopra pywayland). I binding si rigenerano
+  con `scripts/gen-protocols.py` dall'XML in `shell/protocols/`.
+- **Barra:** accanto al logo c'è il nome dell'app in primo piano. **Dock:** pallino sotto le app aperte, le app aperte non
+  fissate compaiono dopo quelle fissate, un clic su un'app aperta la porta in primo piano (prima una finestra minimizzata,
+  poi la successiva), su un'app chiusa la avvia.
+- **Clic che passano:** la finestra del dock ha una maschera di input: solo il vetro prende i clic finché il mouse non ci
+  passa sopra. Non provato su QtWayland vero.
+- **Ancora nessun test contro un compositor vero** per il client Wayland: la logica è testata, il collegamento no.
+- Manca ancora: menu globale (dbusmenu), centro di controllo, notifiche nostre, Mission Control.

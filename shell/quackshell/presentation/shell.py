@@ -11,7 +11,8 @@ from PySide6.QtQml import QQmlApplicationEngine
 
 from ..app.dock_service import DockService
 from ..infra import process, xdg
-from .models import DockModel, Launcher, ThemeIcons
+from .models import DockModel, InputRegion, Launcher, ThemeIcons
+from .windows import WindowWatcher
 
 QML = Path(__file__).parent / "qml"
 BAR_HEIGHT = 28
@@ -54,7 +55,8 @@ def main(argv=None):
     app.setQuitOnLastWindowClosed(False)
     setup_icons()
 
-    service = DockService(xdg.installed_entries, xdg.user_pins, process.launch)
+    watcher = WindowWatcher(xdg.installed_entries)
+    service = DockService(xdg.installed_entries, xdg.user_pins, process.launch, watcher.activate)
     engine = QQmlApplicationEngine()
     engine.addImageProvider("theme", ThemeIcons())
     model = DockModel(service)
@@ -63,6 +65,12 @@ def main(argv=None):
     ctx.setContextProperty("dockModel", model)
     ctx.setContextProperty("launcher", launcher)
     ctx.setContextProperty("barHeight", BAR_HEIGHT)
+    ctx.setContextProperty("windowWatcher", watcher)
+    inputs = InputRegion()
+    ctx.setContextProperty("inputRegion", inputs)
+    watcher.windowsChanged.connect(model.setWindows)
+    if layer:  # a plain run inside another desktop has no labwc to ask
+        watcher.start()
     engine.load(QUrl.fromLocalFile(str(QML / ("main_layer.qml" if layer else "main_plain.qml"))))
     if not engine.rootObjects():
         print("quackos-shell: the QML did not load", file=sys.stderr)

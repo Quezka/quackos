@@ -26,7 +26,7 @@ def files(folder, suffix=""):
 
 class ImageDefinitionTest(unittest.TestCase):
     def test_version_is_semver(self):
-        self.assertRegex(read("VERSION").strip(), r"^\d+\.\d+\.\d+$")
+        self.assertRegex(read("VERSION").strip(), r"^\d+\.\d+\.\d+(-dev\d+)?$")
 
     def test_auto_config_defines_the_image(self):
         cfg = read("auto", "config")

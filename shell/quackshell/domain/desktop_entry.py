@@ -14,6 +14,7 @@ class DesktopEntry:
     exec_line: str
     terminal: bool = False
     hidden: bool = False
+    wm_class: str = ""
 
 
 def _unescape(value):
@@ -53,6 +54,7 @@ def parse(text, desktop_id, locales=()):
         exec_line=group["Exec"],
         terminal=group.get("Terminal", "false").lower() == "true",
         hidden=group.get("Hidden", "false").lower() == "true",
+        wm_class=group.get("StartupWMClass", ""),
     )
 
 

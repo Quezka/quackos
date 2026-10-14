@@ -25,7 +25,7 @@ Rectangle {
         }
         Text {
             anchors.verticalCenter: parent.verticalCenter
-            text: "QuackOS"
+            text: windowWatcher.activeName !== "" ? windowWatcher.activeName : "QuackOS"
             color: "#ecedef"
             font.pixelSize: 13
             font.bold: true

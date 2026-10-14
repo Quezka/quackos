@@ -56,6 +56,7 @@ MUST_EXIST = {
     "usr/share/themes/QuackOS/labwc/close-active.svg": "traffic-light buttons",
     "usr/bin/swaybg": "wallpaper", "usr/bin/mako": "notifications", "usr/bin/fuzzel": "launcher",
     "usr/bin/foot": "terminal", "usr/bin/swaylock": "lock screen",
+    "usr/lib/python3/dist-packages/pywayland/__init__.py": "pywayland (window list for the dock)",
     "usr/lib/python3/dist-packages/PySide6/QtQuick.abi3.so": "PySide6 Qt Quick (the shell)",
     "usr/lib/x86_64-linux-gnu/qt6/qml/org/kde/layershell/qmldir": "layer-shell QML module (bar and dock)",
     "usr/lib/x86_64-linux-gnu/qt6/qml/QtQuick/Window/qmldir": "QtQuick.Window QML module",
