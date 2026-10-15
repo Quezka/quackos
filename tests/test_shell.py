@@ -262,11 +262,15 @@ class SessionFilesTest(unittest.TestCase):
         self.assertIn("*[!a-zA-Z0-9_.-]*)", text)
 
     def test_build_and_try_scripts_exist_and_parse(self):
-        for name in ("local-build.sh", "try-iso.sh"):
+        for name in ("local-build.sh", "try-iso.sh", "publish-iso.sh"):
             path = ROOT / "scripts" / name
             self.assertTrue(os.access(path, os.X_OK), name)
             self.assertEqual(subprocess.run(["bash", "-n", str(path)]).returncode, 0, name)
         self.assertIn("--privileged", (ROOT / "scripts/local-build.sh").read_text())
+        publish = (ROOT / "scripts/publish-iso.sh").read_text()
+        self.assertIn("sha256sum -c", publish)               # checked locally and again on the server
+        self.assertIn("StrictHostKeyChecking=accept-new", publish)
+        self.assertNotIn("gh release", publish)              # nothing goes to GitHub
 
     def test_local_build_cleans_up_but_keeps_the_cache_until_a_build_works(self):
         inner = (ROOT / "scripts/container-build.sh").read_text()
