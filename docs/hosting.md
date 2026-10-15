@@ -3,12 +3,13 @@
 Niente release su GitHub finché il desktop non funziona: le ISO si compilano sul portatile e si pubblicano sul server di casa.
 
 ```sh
-scripts/local-build.sh      # compila in un container Debian 13, ISO in out/ (si pulisce da sola)
-scripts/publish-iso.sh      # manda l'ISO più recente al server e controlla il checksum lì
+scripts/local-build.sh      # compila in un container Debian 13, poi carica da sola l'ISO sul server,
+                            # controlla lì il checksum e solo dopo cancella la copia sul portatile
+scripts/publish-iso.sh      # il solo caricamento (di solito lo fa già local-build.sh)
 ```
 
 Si scarica da **http://quackos.lan/** (solo dalla rete di casa): `quackos-latest-amd64.iso` punta sempre all'ultima, `latest.json`
-dice versione, dimensione, checksum e data. Sul server restano le 2 ISO più recenti. Il dashboard (`QUACKOS_URL`) mostra la stessa informazione.
+dice versione, dimensione, checksum e data. Sul server restano le 2 ISO più recenti. Se il caricamento fallisce l'ISO resta in `out/`; `QUACKOS_KEEP_LOCAL=1` la tiene comunque, `QUACKOS_PUBLISH=0` salta il caricamento. Il dashboard (`QUACKOS_URL`) mostra la stessa informazione.
 
 ## Com'è fatto (2026-10-15)
 

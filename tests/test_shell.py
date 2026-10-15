@@ -282,6 +282,11 @@ class SessionFilesTest(unittest.TestCase):
         self.assertLess(inner.index("rm -rf /build/chroot"), inner.index("rm -rf /build/cache"))
         outer = (ROOT / "scripts/local-build.sh").read_text()
         self.assertIn("image prune", outer)
+        # publish, and delete the local ISO only when the upload (with its remote checksum check) succeeded
+        self.assertIn("scripts/publish-iso.sh", outer)
+        self.assertLess(outer.index("if scripts/publish-iso.sh"), outer.index('rm -f "$newest"'))
+        self.assertIn("UPLOAD FAILED", outer)
+        self.assertIn("QUACKOS_KEEP_LOCAL", outer)
         self.assertIn("tail -n +3", outer)                   # only the 2 newest ISOs stay
         self.assertEqual(subprocess.run(["bash", "-n", str(ROOT / "scripts/container-build.sh")]).returncode, 0)
         self.assertIn("/.quackos-works", (ROOT / ".gitignore").read_text())

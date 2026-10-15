@@ -11,6 +11,10 @@
 #     "we have a working build"): then the cache goes too;
 #   - dangling docker images are pruned (the debian:trixie base image is kept);
 #   - only the 2 newest ISOs stay in ./out/.
+#
+# Publishing (automatic, after a successful build): the ISO is uploaded to the home server with scripts/publish-iso.sh, the
+# checksum is verified THERE, and only then the local copy is deleted (this laptop is short of disk). If the upload fails
+# the ISO stays in out/ and the script exits with an error. QUACKOS_PUBLISH=0 skips it, QUACKOS_KEEP_LOCAL=1 keeps the file.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 
@@ -46,4 +50,16 @@ if [ "$status" -ne 0 ]; then
     echo "build FAILED (exit $status)" >&2
     exit "$status"
 fi
-ls -lh out/quackos-*-amd64.iso
+newest="$(ls -1t out/quackos-*-amd64.iso 2>/dev/null | head -n1)"
+if [ "${QUACKOS_PUBLISH:-1}" = 1 ] && [ -n "$newest" ]; then
+    if scripts/publish-iso.sh "$newest"; then
+        if [ "${QUACKOS_KEEP_LOCAL:-0}" != 1 ]; then
+            rm -f "$newest" "$newest.sha256"
+            echo "local copy removed (it is on the server and its checksum was verified there)"
+        fi
+    else
+        echo "UPLOAD FAILED: the ISO stays in out/ ($newest)" >&2
+        exit 1
+    fi
+fi
+ls -lh out/ 2>/dev/null || true
