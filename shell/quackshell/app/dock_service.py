@@ -15,17 +15,32 @@ class DockItem:
     def running(self):
         return len(self.windows)
 
+    @property
+    def icon(self):
+        """`own:<name>` for the icons we draw ourselves, else the icon name of the .desktop file."""
+        own = dock.own_icon(self.entry.desktop_id)
+        return f"own:{own}" if own else (self.entry.icon or "own:app")
+
 
 class DockService:
-    def __init__(self, load_entries, load_pins, launch, activate=lambda window_id: None):
+    def __init__(self, load_entries, load_pins, launch, activate=lambda window_id: None,
+                 save_pins=lambda pins: True, close_window=lambda window_id: None, minimize_window=lambda window_id: None):
         self._load_entries = load_entries
         self._load_pins = load_pins
         self._launch = launch
         self._activate = activate
+        self._save_pins = save_pins
+        self._close = close_window
+        self._minimize = minimize_window
+
+    def _pins(self):
+        """The user's list when there is one (even an empty one: they may have unpinned everything), else the defaults."""
+        pins = self._load_pins()
+        return list(dock.DEFAULT_PINS) if pins is None else list(pins)
 
     def items(self, windows=()):
         entries = self._load_entries()
-        pinned = dock.resolve(self._load_pins() or dock.DEFAULT_PINS, entries)
+        pinned = dock.resolve(self._pins(), entries)
         known, unknown = win.group(windows, entries.values())
         out = [DockItem(e, tuple(known.get(e.desktop_id, ())), True) for e in pinned]
         pinned_ids = {e.desktop_id for e in pinned}
@@ -44,3 +59,26 @@ class DockService:
             self._activate(target.id)
         else:
             self._launch(item.entry)
+
+    def new_window(self, item):
+        """'Open' in the menu of a running app: a second instance (most apps just raise themselves)."""
+        self._launch(item.entry)
+
+    def toggle_pin(self, item):
+        """Keep the app in the dock (or not); only apps with a real .desktop file can be pinned."""
+        if item.entry.desktop_id.startswith("window:"):
+            return False
+        pins = self._pins()
+        if item.entry.desktop_id in pins:
+            pins.remove(item.entry.desktop_id)
+        else:
+            pins.append(item.entry.desktop_id)
+        return self._save_pins(pins)
+
+    def quit(self, item):
+        for w in item.windows:
+            self._close(w.id)
+
+    def hide(self, item):
+        for w in item.windows:
+            self._minimize(w.id)

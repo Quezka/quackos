@@ -90,3 +90,17 @@ notifiche nostre, Mission Control, schermata di blocco nostra: sono la fase 2 (s
   intercetta quindi i clic; da risolvere in un altro modo (finestra che si ridimensiona, o compositor nostro).
 - **Ancora nessun test contro un compositor vero** per il client Wayland: la logica è testata, il collegamento no.
 - Manca ancora: menu globale (dbusmenu), centro di controllo, notifiche nostre, Mission Control.
+
+## dev4 (16 ottobre 2026): la lista dell'autore dopo la prova della dev3
+
+Provata in QEMU a 1368x768 (la risoluzione del portatile) con la cartella del repo montata in 9p, che permette di
+cambiare shell e configurazione di labwc senza rifare la ISO (`/tmp/dev.sh` nella VM, vedi la nota di memoria su QuackOS).
+Fatto: sessione QuackOS di default; barra interattiva con popup (un'unica superficie layer-shell a schermo intero sopra tutto,
+che compare solo mentre un popup è aperto, così un clic fuori lo chiude); centro di controllo, Wi-Fi, audio, batteria, calendario;
+menu del dock; schermo intero come macOS (il pulsante verde, la barra che riappare in cima); tema chiaro; niente app KDE nel dock.
+Scoperte utili: labwc nasconde da solo le superfici `top` quando una finestra è a schermo intero; una superficie layer a
+`exclusionZone: 0` viene spostata sotto lo spazio riservato dalla barra anche se la barra è nascosta (serve `-1`);
+`QWindow.setMask` fa smettere di ridisegnare fuori dalla maschera.
+**Ancora da fare:** Quack Files (file manager nostro) e Impostazioni nostre (ora pcmanfm-qt e il centro di controllo),
+Cestino nel dock, menu globale delle app, notifiche nostre, Mission Control, schermata di blocco nostra, tema scuro.
+**Da capire:** perché sul ThinkPad non si vedevano i pallini delle finestre (in QEMU ci sono): serve uno screenshot da lì.

@@ -1,0 +1,9 @@
+#!/bin/bash
+# On an installed system SDDM starts the session the user used last; a fresh account has none, so tell SDDM that the
+# QuackOS desktop (labwc + our shell) is the "last" one. The file belongs to the sddm user, who rewrites it at every login.
+set -euo pipefail
+test -f /usr/share/wayland-sessions/quackos.desktop
+install -d -m 755 -o sddm -g sddm /var/lib/sddm
+printf '[Last]\nSession=/usr/share/wayland-sessions/quackos.desktop\n' > /var/lib/sddm/state.conf
+chown sddm:sddm /var/lib/sddm/state.conf
+chmod 644 /var/lib/sddm/state.conf

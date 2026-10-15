@@ -1,12 +1,11 @@
 #!/bin/sh
 # live-config component "quackos-session": chooses the session the live user is logged into automatically.
 #
-# live-config's own sddm component (0085) writes "Session=plasma.desktop", which in Plasma 6 is the WAYLAND
-# session. X11 works on far more hardware (old GPUs, VMs, odd drivers), and a live image that does not reach the
-# desktop is worthless, so QuackOS defaults to the X11 Plasma session. Boot parameters:
-#   quackos.wayland          keep the Wayland Plasma session
-#   quackos.session=NAME     log into NAME instead: quackos (the new desktop: labwc + our shell), plasma, plasmax11,
+# live-config's own sddm component (0085) writes "Session=plasma.desktop" (Plasma 6 on Wayland). QuackOS logs the live
+# user into its OWN desktop (labwc + our shell) instead. Boot parameters:
+#   quackos.session=NAME     log into NAME instead: plasmax11 (KDE on X11, the safe fallback), plasma (KDE on Wayland),
 #                            or any other file name in /usr/share/{xsessions,wayland-sessions}/NAME.desktop
+#   quackos.wayland          same as quackos.session=plasma
 #   noautologin              (live-config's own) show the login screen, with its session menu, instead
 . /usr/lib/live/config.sh
 
@@ -32,11 +31,6 @@ Init ()
 		exit 0
 	fi
 
-	if [ "${QUACKOS_WAYLAND}" = "true" ] && [ -z "${QUACKOS_SESSION}" ]
-	then
-		exit 0
-	fi
-
 	echo -n " quackos-session"
 }
 
@@ -58,7 +52,15 @@ Config ()
 		fi
 	fi
 
-	sed -i 's/^Session=plasma\.desktop$/Session=plasmax11.desktop/' /etc/sddm.conf
+	if [ "${QUACKOS_WAYLAND}" = "true" ]
+	then
+		sed -i 's/^Session=.*$/Session=plasma.desktop/' /etc/sddm.conf
+	elif [ -f /usr/share/wayland-sessions/quackos.desktop ]
+	then
+		sed -i 's/^Session=.*$/Session=quackos.desktop/' /etc/sddm.conf
+	else
+		sed -i 's/^Session=plasma\.desktop$/Session=plasmax11.desktop/' /etc/sddm.conf
+	fi
 	touch /var/lib/live/config/quackos-session
 }
 

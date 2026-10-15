@@ -1,0 +1,25 @@
+AboutDialog 1.0 AboutDialog.qml
+AppMenu 1.0 AppMenu.qml
+BarButton 1.0 BarButton.qml
+BarContent 1.0 BarContent.qml
+BatteryIcon 1.0 BatteryIcon.qml
+BatteryPopup 1.0 BatteryPopup.qml
+CalendarPopup 1.0 CalendarPopup.qml
+ConfirmDialog 1.0 ConfirmDialog.qml
+ControlCenter 1.0 ControlCenter.qml
+ControlIcon 1.0 ControlIcon.qml
+DockContent 1.0 DockContent.qml
+DockMenu 1.0 DockMenu.qml
+FullscreenReveal 1.0 FullscreenReveal.qml
+LockIcon 1.0 LockIcon.qml
+LogoMenu 1.0 LogoMenu.qml
+MenuPanel 1.0 MenuPanel.qml
+MenuRow 1.0 MenuRow.qml
+MenuSeparator 1.0 MenuSeparator.qml
+PopupLayer 1.0 PopupLayer.qml
+SliderRow 1.0 SliderRow.qml
+singleton Theme 1.0 Theme.qml
+VolumeIcon 1.0 VolumeIcon.qml
+VolumePopup 1.0 VolumePopup.qml
+WifiIcon 1.0 WifiIcon.qml
+WifiPopup 1.0 WifiPopup.qml

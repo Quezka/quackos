@@ -92,17 +92,39 @@ class ImageDefinitionTest(unittest.TestCase):
         for name in ("lib", "lib64", "bin", "sbin"):
             self.assertFalse(os.path.exists(os.path.join(INC, name)), "includes/%s would clobber the /%s symlink" % (name, name))
 
-    def test_live_session_defaults_to_x11(self):
+    def test_live_session_defaults_to_our_desktop_with_boot_parameters(self):
+        """Runs the real live-config component against a fake root: the live user is logged into QuackOS (labwc + our
+        shell) by default; quackos.wayland / quackos.session=NAME override it; a missing session falls back to X11 Plasma."""
         script = read("config", "includes.chroot_after_packages", "usr", "lib", "live", "config", "0086-quackos-session")
         self.assertIn(". /usr/lib/live/config.sh", script)
-        self.assertIn("quackos.wayland", script)
-        # run the very sed the script uses on what live-config's 0085-sddm writes
-        command = re.search(r"sed -i '([^']+)' /etc/sddm\.conf", script).group(1)
-        written = "[Autologin]\nUser=quack\nSession=plasma.desktop\n"
-        out = subprocess.run(["sed", command], input=written, capture_output=True, text=True).stdout
-        self.assertEqual(out, "[Autologin]\nUser=quack\nSession=plasmax11.desktop\n")
-        # and it must run AFTER live-config's own sddm component
-        self.assertGreater("0086-quackos-session", "0085-sddm")
+        self.assertGreater("0086-quackos-session", "0085-sddm")      # it must run AFTER live-config's own sddm component
+
+        def session_for(cmdline, sessions=("wayland-sessions/quackos.desktop", "xsessions/plasmax11.desktop")):
+            with tempfile.TemporaryDirectory() as tmp:
+                for rel in sessions:
+                    os.makedirs(os.path.join(tmp, "usr/share", os.path.dirname(rel)), exist_ok=True)
+                    open(os.path.join(tmp, "usr/share", rel), "w").close()
+                os.makedirs(os.path.join(tmp, "etc"))
+                os.makedirs(os.path.join(tmp, "var/lib/live/config"))
+                with open(os.path.join(tmp, "etc/sddm.conf"), "w") as f:
+                    f.write("[Autologin]\nUser=quack\nSession=plasma.desktop\n")
+                with open(os.path.join(tmp, "config.sh"), "w") as f:
+                    f.write('component_was_executed() { [ -f "%s/var/lib/live/config/$1" ]; }\n' % tmp)
+                patched = script.replace(". /usr/lib/live/config.sh", ". %s/config.sh" % tmp)
+                for path in ("/etc/sddm.conf", "/usr/share/", "/var/lib/live/config"):
+                    patched = patched.replace(path, tmp + path)
+                with open(os.path.join(tmp, "c.sh"), "w") as f:
+                    f.write(patched)
+                subprocess.run(["sh", os.path.join(tmp, "c.sh")], env=dict(os.environ, LIVE_CONFIG_CMDLINE=cmdline),
+                               capture_output=True, check=True)
+                return re.search(r"^Session=(\S+)$", open(os.path.join(tmp, "etc/sddm.conf")).read(), re.M).group(1)
+
+        self.assertEqual(session_for(""), "quackos.desktop")
+        self.assertEqual(session_for("quackos.wayland"), "plasma.desktop")
+        self.assertEqual(session_for("quackos.session=plasmax11"), "plasmax11.desktop")
+        self.assertEqual(session_for("quackos.session=nothing"), "quackos.desktop")        # a typo must not break login
+        self.assertEqual(session_for("quackos.session=a/b;x"), "quackos.desktop")
+        self.assertEqual(session_for("", sessions=("xsessions/plasmax11.desktop",)), "plasmax11.desktop")
 
     def test_installer_launcher_replaces_debians(self):
         # Debian's calamares-desktop-icon autostart copies this exact file to the live desktop

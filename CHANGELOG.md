@@ -1,5 +1,21 @@
 # Changelog
 
+## [0.2.0-dev4] - 2026-10-16 (local test build, not released)
+
+From the author's test of dev3 on the ThinkPad:
+- QuackOS is the DEFAULT session now (live autologin and installed system); `quackos.session=plasmax11` boots KDE instead.
+- Fix: the window list stopped working after a while (pywayland lost the registry to the garbage collector): the dock could
+  not raise or show running apps. That also made switching between windows impossible.
+- The bar is interactive: logo menu (About, Settings, Lock, Log out / Restart / Shut down with a confirmation), the focused
+  app's menu (hide / quit), Wi-Fi (switch, networks, password), sound, battery, control centre (sound, brightness, Wi-Fi)
+  and a calendar on the clock.
+- Dock: right click menu (open, hide, quit, keep in dock), bounce while an app starts, running dots, our own icons for
+  Files and Terminal; no KDE apps in the dock or in the menus any more (pcmanfm-qt and foot).
+- Windows: light macOS-style titlebars; green button = FULL SCREEN (bar and dock hide, moving the pointer to the top edge brings
+  back a thin bar with the coloured buttons); right click on it zooms; Command-Tab, Command-H, Control-Command-F,
+  Command-Left/Right snap; screenshots (Print, Shift-Command-3 / 4) saved in ~/Pictures.
+- Logs: ~/.cache/quackos-session.log and ~/.cache/quackos-shell.log.
+
 ## [0.2.0-dev3] - 2026-10-14 (local test build, not released)
 
 - Fix: `python3-cffi-backend` added (pywayland imports it but Debian's package does not depend on it, so the dock had no window list). Fix: the dock input mask is gone (QtWayland stopped repainting outside it: black patches). Found by booting the ISO in QEMU.

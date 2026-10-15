@@ -48,3 +48,17 @@ def user_pins(env=None):
     except (OSError, ValueError):
         return None
     return data if isinstance(data, list) and all(isinstance(x, str) for x in data) else None
+
+
+def save_pins(pins, env=None):
+    """Write the user's dock list (~/.config/quackos/dock.json). False when the folder is not writable."""
+    env = os.environ if env is None else env
+    conf = Path(env.get("XDG_CONFIG_HOME") or Path.home() / ".config") / "quackos" / "dock.json"
+    try:
+        conf.parent.mkdir(parents=True, exist_ok=True)
+        tmp = conf.with_suffix(".tmp")
+        tmp.write_text(json.dumps(list(pins), indent=1))
+        tmp.replace(conf)
+        return True
+    except OSError:
+        return False

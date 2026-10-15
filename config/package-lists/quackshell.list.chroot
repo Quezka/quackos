@@ -7,6 +7,9 @@ swayidle
 swaylock
 wlopm
 mako-notifier
+# notify-send (screenshots, the shell) and a Qt file manager that is not KDE (until Quack Files exists)
+libnotify-bin
+pcmanfm-qt
 fuzzel
 foot
 grim

@@ -8,10 +8,19 @@ DEFAULT_PINS = (
     "io.github.quezka.Gantry.desktop",
     "io.github.quezka.Bivouac.desktop",
     "io.github.quezka.Natter.desktop",
-    "org.kde.dolphin.desktop",
-    "org.kde.konsole.desktop",
-    "systemsettings.desktop",
+    "pcmanfm-qt.desktop",
+    "foot.desktop",
 )
+
+# Our own icons (shell/quackshell/presentation/icons) for the system apps, so the dock does not depend on an icon theme
+OWN_ICONS = {
+    "foot.desktop": "terminal", "footclient.desktop": "terminal", "pcmanfm-qt.desktop": "files",
+    "org.kde.dolphin.desktop": "files", "org.kde.konsole.desktop": "terminal", "systemsettings.desktop": "settings",
+}
+
+
+def own_icon(desktop_id):
+    return OWN_ICONS.get(desktop_id)
 
 
 def resolve(pins, entries):

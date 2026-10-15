@@ -72,8 +72,11 @@ class ToplevelClient:
         self._seat = self._manager = None
         self._display = Display()
         self._display.connect()
-        registry = self._display.get_registry()
-        registry.dispatcher["global"] = self._on_global
+        # KEEP the registry referenced: pywayland finds the display for every new object (each new window) through the
+        # live WlRegistry proxies, so a registry that gets garbage collected makes every later window fail with
+        # "Cannot find display" (found in QEMU: the dock only knew the windows open when the shell started).
+        self._registry = self._display.get_registry()
+        self._registry.dispatcher["global"] = self._on_global
         self._display.roundtrip()   # globals
         self._display.roundtrip()   # the first toplevels
         if self._manager is None:
@@ -81,6 +84,32 @@ class ToplevelClient:
 
     def fileno(self):
         return self._display.get_fd()
+
+    def close_window(self, wid):
+        if wid in self._handles:
+            self._handles[wid].close()
+            self._display.flush()
+
+    def shutdown(self):
+        """Release the protocol objects BEFORE the connection: destroying them the other way round (what the garbage
+        collector does at exit) crashes libwayland."""
+        for handle in list(self._handles.values()):
+            try:
+                handle.destroy()
+            except Exception:
+                pass
+        self._handles.clear()
+        try:
+            if self._manager is not None:
+                self._manager.stop()
+                self._display.flush()
+        except Exception:
+            pass
+        self._manager = self._seat = self._registry = None
+        try:
+            self._display.disconnect()
+        except Exception:
+            pass
 
     def process(self):
         self._display.read()
@@ -92,14 +121,14 @@ class ToplevelClient:
             self._handles[wid].activate(self._seat)
             self._display.flush()
 
-    def close(self, wid):
-        if wid in self._handles:
-            self._handles[wid].close()
-            self._display.flush()
-
     def minimize(self, wid):
         if wid in self._handles:
             self._handles[wid].set_minimized()
+            self._display.flush()
+
+    def leave_fullscreen(self, wid):
+        if wid in self._handles:
+            self._handles[wid].unset_fullscreen()
             self._display.flush()
 
     # --- protocol wiring ---

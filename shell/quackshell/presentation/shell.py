@@ -10,12 +10,14 @@ from PySide6.QtGui import QGuiApplication, QIcon
 from PySide6.QtQml import QQmlApplicationEngine
 
 from ..app.dock_service import DockService
-from ..infra import process, xdg
+from ..app.system_service import SystemService
+from ..infra import process, system as sysinfra, xdg
 from .models import DockModel, Launcher, ThemeIcons
+from .state import ShellState
+from .system import SystemModel
 from .windows import WindowWatcher
 
 QML = Path(__file__).parent / "qml"
-BAR_HEIGHT = 28
 
 
 def qml_import_paths(env=os.environ):
@@ -56,7 +58,11 @@ def main(argv=None):
     setup_icons()
 
     watcher = WindowWatcher(xdg.installed_entries)
-    service = DockService(xdg.installed_entries, xdg.user_pins, process.launch, watcher.activate)
+    service = DockService(xdg.installed_entries, xdg.user_pins, process.launch, watcher.activate,
+                          save_pins=xdg.save_pins, close_window=watcher.close_window, minimize_window=watcher.minimize_window)
+    state = ShellState()
+    system = SystemModel(SystemService(sysinfra.Audio(), sysinfra.Brightness(), sysinfra.Battery(),
+                                       sysinfra.Network(), sysinfra.Power()))
     engine = QQmlApplicationEngine()
     engine.addImageProvider("theme", ThemeIcons())
     model = DockModel(service)
@@ -64,13 +70,16 @@ def main(argv=None):
     ctx = engine.rootContext()
     ctx.setContextProperty("dockModel", model)
     ctx.setContextProperty("launcher", launcher)
-    ctx.setContextProperty("barHeight", BAR_HEIGHT)
     ctx.setContextProperty("windowWatcher", watcher)
+    ctx.setContextProperty("shellState", state)
+    ctx.setContextProperty("systemModel", system)
     watcher.windowsChanged.connect(model.setWindows)
     if layer:  # a plain run inside another desktop has no labwc to ask
         watcher.start()
+        app.aboutToQuit.connect(watcher.stop)
     engine.load(QUrl.fromLocalFile(str(QML / ("main_layer.qml" if layer else "main_plain.qml"))))
     if not engine.rootObjects():
         print("quackos-shell: the QML did not load", file=sys.stderr)
         return 1
+    system.start()
     return app.exec()

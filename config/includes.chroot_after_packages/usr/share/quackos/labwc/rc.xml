@@ -23,6 +23,7 @@
       <naturalScroll>yes</naturalScroll>
       <tap>yes</tap>
       <tapAndDrag>yes</tapAndDrag>
+      <dragLock>no</dragLock>
       <disableWhileTyping>yes</disableWhileTyping>
     </device>
   </libinput>
@@ -32,11 +33,24 @@
     <!-- Super is the Command key -->
     <keybind key="W-space"><action name="Execute" command="fuzzel" /></keybind>
     <keybind key="W-Return"><action name="Execute" command="foot" /></keybind>
-    <keybind key="W-e"><action name="Execute" command="dolphin" /></keybind>
+    <keybind key="W-e"><action name="Execute" command="pcmanfm-qt" /></keybind>
     <keybind key="W-q"><action name="Close" /></keybind>
+    <keybind key="W-w"><action name="Close" /></keybind>
     <keybind key="W-m"><action name="Iconify" /></keybind>
+    <keybind key="W-h"><action name="Iconify" /></keybind>
+    <keybind key="W-Tab"><action name="NextWindow" /></keybind>
+    <keybind key="W-S-Tab"><action name="PreviousWindow" /></keybind>
+    <!-- Control+Command+F: full screen, like macOS; Command+Up zooms (maximise) -->
+    <keybind key="C-W-f"><action name="ToggleFullscreen" /></keybind>
+    <keybind key="W-Up"><action name="ToggleMaximize" /></keybind>
+    <keybind key="W-Left"><action name="SnapToEdge" direction="left" /></keybind>
+    <keybind key="W-Right"><action name="SnapToEdge" direction="right" /></keybind>
     <keybind key="W-l"><action name="Execute" command="swaylock -f -c 111214" /></keybind>
-    <keybind key="Print"><action name="Execute" command="sh -c 'grim -g &quot;$(slurp)&quot; - | wl-copy'" /></keybind>
+    <keybind key="C-W-q"><action name="Execute" command="swaylock -f -c 111214" /></keybind>
+    <!-- Screenshots (saved in ~/Pictures and copied): Print or Shift+Command+4 = an area, Shift+Command+3 = the whole screen -->
+    <keybind key="Print"><action name="Execute" command="quackos-screenshot area" /></keybind>
+    <keybind key="W-S-4"><action name="Execute" command="quackos-screenshot area" /></keybind>
+    <keybind key="W-S-3"><action name="Execute" command="quackos-screenshot screen" /></keybind>
     <keybind key="XF86_MonBrightnessUp"><action name="Execute" command="brightnessctl set 5%+" /></keybind>
     <keybind key="XF86_MonBrightnessDown"><action name="Execute" command="brightnessctl set 5%-" /></keybind>
     <keybind key="XF86_AudioRaiseVolume"><action name="Execute" command="wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+" /></keybind>
@@ -46,6 +60,12 @@
 
   <mouse>
     <default />
+    <!-- The three coloured buttons, like macOS: red closes, yellow goes to the dock, GREEN IS FULL SCREEN
+         (Right click on it zooms: maximise). Double click on the title bar also zooms. -->
+    <context name="Maximize">
+      <mousebind button="Left" action="Click"><action name="ToggleFullscreen" /></mousebind>
+      <mousebind button="Right" action="Click"><action name="ToggleMaximize" /></mousebind>
+    </context>
   </mouse>
 
 </labwc_config>

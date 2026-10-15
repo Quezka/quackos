@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from .desktop_entry import DesktopEntry
 
-ACTIVATED, MINIMIZED = 2, 1  # values of zwlr_foreign_toplevel_handle_v1.state
+MAXIMIZED, MINIMIZED, ACTIVATED, FULLSCREEN = 0, 1, 2, 3  # values of zwlr_foreign_toplevel_handle_v1.state
 
 
 @dataclass(frozen=True)
@@ -15,6 +15,7 @@ class Window:
     app_id: str = ""
     activated: bool = False
     minimized: bool = False
+    fullscreen: bool = False
 
 
 def _keys(entry):
@@ -83,4 +84,25 @@ def next_to_raise(windows):
 
 def apply_state(window, states):
     """`window` with the flags of a protocol `state` array (values 0=maximized 1=minimized 2=activated 3=fullscreen)."""
-    return Window(window.id, window.title, window.app_id, ACTIVATED in states, MINIMIZED in states)
+    return Window(window.id, window.title, window.app_id, ACTIVATED in states, MINIMIZED in states, FULLSCREEN in states)
+
+
+def active_fullscreen(windows):
+    """True while the focused window is full screen: the dock and the bar stay out of the way (macOS does the same)."""
+    return any(w.activated and w.fullscreen and not w.minimized for w in windows)
+
+
+def active_window(windows):
+    """The focused window that is on screen, or None."""
+    return next((w for w in windows if w.activated and not w.minimized), None)
+
+
+def windows_of(app_windows_source, windows, entries):
+    """The windows that belong to the same app as `app_windows_source` (a Window): for 'hide' and 'quit' of an app."""
+    entries = list(entries)
+    target = entry_for(app_windows_source.app_id, entries)
+    out = []
+    for w in windows:
+        if w.app_id == app_windows_source.app_id or (target is not None and entry_for(w.app_id, entries) is target):
+            out.append(w)
+    return out

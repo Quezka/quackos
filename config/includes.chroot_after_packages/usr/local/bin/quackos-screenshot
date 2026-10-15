@@ -1,0 +1,13 @@
+#!/bin/sh
+# quackos-screenshot area|screen: saves a PNG in ~/Pictures and copies it to the clipboard, then says so.
+dir="${XDG_PICTURES_DIR:-$HOME/Pictures}"
+mkdir -p "$dir"
+file="$dir/Screenshot-$(date +%F_%H-%M-%S).png"
+if [ "${1:-area}" = area ]; then
+    region="$(slurp 2>/dev/null)" || exit 0          # Esc cancels
+    grim -g "$region" "$file" || exit 1
+else
+    grim "$file" || exit 1
+fi
+wl-copy < "$file" 2>/dev/null
+notify-send -i camera-photo "Screenshot salvato" "$file" 2>/dev/null || true

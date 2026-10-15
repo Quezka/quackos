@@ -9,9 +9,10 @@ from pathlib import Path
 ROOT = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(ROOT / "shell"))
 
-from quackshell.app.dock_service import DockService  # noqa: E402
-from quackshell.domain import desktop_entry, dock, windows as win  # noqa: E402
-from quackshell.infra import toplevels, xdg  # noqa: E402
+from quackshell.app.dock_service import DockItem, DockService  # noqa: E402
+from quackshell.app.system_service import SystemService  # noqa: E402
+from quackshell.domain import desktop_entry, dock, status, windows as win  # noqa: E402
+from quackshell.infra import system as sysinfra, toplevels, xdg  # noqa: E402
 
 QUIRE = """# comment
 [Desktop Entry]
@@ -181,6 +182,207 @@ class ProtocolFilesTest(unittest.TestCase):
             self.assertNotIn("from ..wayland", text, f)
         self.assertIn("from pywayland.protocol.wayland import WlSeat",
                       (out / "zwlr_foreign_toplevel_handle_v1.py").read_text())
+
+
+class StatusParsingTest(unittest.TestCase):
+    def test_volume(self):
+        self.assertEqual(status.parse_wpctl_volume("Volume: 0.45"), (45, False))
+        self.assertEqual(status.parse_wpctl_volume("Volume: 1.00 [MUTED]"), (100, True))
+        self.assertEqual(status.parse_wpctl_volume("Volume: 7.00"), (150, False))      # never above 150%
+        self.assertEqual(status.parse_wpctl_volume(""), (None, False))
+        self.assertEqual(status.parse_wpctl_volume(None), (None, False))
+
+    def test_brightness_takes_the_first_backlight_only(self):
+        self.assertEqual(status.parse_brightnessctl("intel_backlight,backlight,5000,50%,10000"), 50)
+        self.assertEqual(status.parse_brightnessctl("tpacpi::kbd_backlight,leds,1,50%,2\nacpi_video0,backlight,3,30%,10"), 30)
+        self.assertIsNone(status.parse_brightnessctl(""))
+        self.assertIsNone(status.parse_brightnessctl("garbage"))
+
+    def test_battery(self):
+        self.assertEqual(status.parse_battery("62\n", "Charging\n"), (62, True))
+        self.assertEqual(status.parse_battery("100", "Full"), (100, True))
+        self.assertEqual(status.parse_battery("40", "Discharging"), (40, False))
+        self.assertEqual(status.parse_battery("999", "Full")[0], 100)
+        self.assertEqual(status.parse_battery("x", "Full"), (None, False))
+
+    def test_nmcli_fields_keep_escaped_colons_and_backslashes(self):
+        self.assertEqual(status.split_nmcli(r"yes:Casa\: Wi-Fi:72:WPA2"), ["yes", "Casa: Wi-Fi", "72", "WPA2"])
+        self.assertEqual(status.split_nmcli(r"a\\b:c"), ["a\\b", "c"])
+        self.assertEqual(status.split_nmcli(""), [""])
+
+    def test_wifi_list_is_deduplicated_and_ordered(self):
+        text = "yes:Casa:72:WPA2\n:Casa:40:WPA2\n:Aperta:55:\n::30:WPA2\n:Altra:90:WPA3\n:Rotta:xx:WPA2\nshort"
+        nets = status.parse_wifi_list(text, known=["Altra"])
+        self.assertEqual([n.ssid for n in nets], ["Casa", "Altra", "Aperta"])      # the connected one first, then by signal
+        self.assertEqual([(n.secured, n.known, n.active) for n in nets], [(True, False, True), (True, True, False), (False, False, False)])
+        self.assertEqual(status.parse_wifi_list(""), [])
+
+    def test_wifi_enabled_and_bars(self):
+        self.assertTrue(status.parse_wifi_enabled("enabled\n"))
+        self.assertFalse(status.parse_wifi_enabled("disabled"))
+        self.assertEqual([status.wifi_bars(v) for v in (0, 10, 30, 60, 90)], [0, 1, 2, 3, 4])
+
+
+class SystemAdaptersTest(unittest.TestCase):
+    def fake(self, answers):
+        calls = []
+
+        def run(argv, timeout=4):
+            calls.append(argv)
+            return answers.get(argv[0], (-1, ""))
+        return run, calls
+
+    def test_a_missing_tool_reads_as_not_available_and_never_raises(self):
+        run, _ = self.fake({})
+        self.assertEqual(sysinfra.Audio(run).read(), (None, False))
+        self.assertIsNone(sysinfra.Brightness(run).read())
+        self.assertFalse(sysinfra.Network(run).enabled())
+        self.assertEqual(sysinfra.Network(run).networks(), [])
+        self.assertEqual(sysinfra.run(["definitely-not-a-program-xyz"]), (-1, ""))
+
+    def test_setters_clamp_their_values(self):
+        run, calls = self.fake({"wpctl": (0, ""), "brightnessctl": (0, "")})
+        sysinfra.Audio(run).set_volume(250)
+        sysinfra.Audio(run).set_volume(-5)
+        sysinfra.Brightness(run).set(0)
+        self.assertIn("100%", calls[0])
+        self.assertIn("0%", calls[1])
+        self.assertIn("1%", calls[2])                       # never a black screen
+
+    def test_battery_reads_sysfs(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            self.assertEqual(sysinfra.Battery(tmp).read(), (None, False))
+            bat = Path(tmp, "BAT0"); bat.mkdir()
+            (bat / "capacity").write_text("55\n"); (bat / "status").write_text("Discharging\n")
+            self.assertEqual(sysinfra.Battery(tmp).read(), (55, False))
+
+    def test_power_actions_are_detached_commands(self):
+        spawned = []
+        power = sysinfra.Power(spawned.append)
+        power.lock(); power.logout(); power.reboot(); power.poweroff()
+        self.assertEqual([a[0] for a in spawned], ["swaylock", "labwc", "systemctl", "systemctl"])
+        self.assertEqual(spawned[1], ["labwc", "--exit"])
+        self.assertEqual(spawned[3], ["systemctl", "poweroff"])
+
+    def test_snapshot_hides_wifi_networks_when_wifi_is_off(self):
+        class Net:
+            def available(self): return True
+            def enabled(self): return False
+            def networks(self): raise AssertionError("must not scan while Wi-Fi is off")
+
+        class Fixed:
+            def __init__(self, value): self.value = value
+            def read(self): return self.value
+
+        svc = SystemService(Fixed((30, True)), Fixed(None), Fixed((80, False)), Net(), None)
+        snap = svc.snapshot()
+        self.assertEqual((snap.volume, snap.muted, snap.brightness, snap.battery, snap.networks),
+                         (30, True, -1, 80, ()))
+
+
+class FullscreenAndAppWindowsTest(unittest.TestCase):
+    def test_fullscreen_flag_comes_from_the_state_array(self):
+        w = win.apply_state(win.Window(1, "t", "a"), {win.ACTIVATED, win.FULLSCREEN})
+        self.assertEqual((w.activated, w.fullscreen, w.minimized), (True, True, False))
+
+    def test_the_dock_hides_only_for_the_focused_visible_fullscreen_window(self):
+        full = win.Window(1, activated=True, fullscreen=True)
+        self.assertTrue(win.active_fullscreen([win.Window(2), full]))
+        self.assertFalse(win.active_fullscreen([win.Window(1, fullscreen=True)]))                      # fullscreen but not focused
+        self.assertFalse(win.active_fullscreen([win.Window(1, activated=True, fullscreen=True, minimized=True)]))
+        self.assertFalse(win.active_fullscreen([]))
+
+    def test_windows_of_the_same_app_for_hide_and_quit(self):
+        entries = [desktop_entry.DesktopEntry("io.github.quezka.Quire.desktop", "Quire", "q", "/opt/quire/Quire")]
+        a, b, other = win.Window(1, app_id="io.github.quezka.Quire"), win.Window(2, app_id="quire"), win.Window(3, app_id="foot")
+        got = win.windows_of(a, [a, other, b], entries)
+        self.assertEqual([w.id for w in got], [1, 2])
+        self.assertEqual(win.active_window([a, win.Window(9, activated=True, minimized=True), other]), None)
+        self.assertEqual(win.active_window([a, win.Window(9, activated=True)]).id, 9)
+
+
+class DockActionsTest(unittest.TestCase):
+    def setUp(self):
+        self.q = desktop_entry.DesktopEntry("io.github.quezka.Quire.desktop", "Quire", "q", "quire")
+        self.saved, self.closed, self.minimized = [], [], []
+        self.pins = ["io.github.quezka.Quire.desktop"]
+        self.svc = DockService(lambda: {self.q.desktop_id: self.q}, lambda: list(self.pins), lambda e: None, lambda i: None,
+                               save_pins=lambda p: self.saved.append(list(p)) or True,
+                               close_window=self.closed.append, minimize_window=self.minimized.append)
+
+    def test_toggle_pin_adds_and_removes_and_saves(self):
+        item = self.svc.items()[0]
+        self.assertTrue(self.svc.toggle_pin(item))
+        self.assertEqual(self.saved[-1], [])                                     # it was pinned: now removed
+        self.pins = []
+        self.assertTrue(self.svc.toggle_pin(DockItem(self.q, (), False)))
+        self.assertEqual(self.saved[-1], ["io.github.quezka.Quire.desktop"])
+
+    def test_apps_without_a_desktop_file_cannot_be_pinned(self):
+        stray = DockItem(desktop_entry.DesktopEntry("window:xyz", "xyz", "", ""), (win.Window(1),), False)
+        self.assertFalse(self.svc.toggle_pin(stray))
+        self.assertEqual(self.saved, [])
+
+    def test_quit_and_hide_reach_every_window_of_the_app(self):
+        item = DockItem(self.q, (win.Window(4), win.Window(5)), True)
+        self.svc.quit(item); self.svc.hide(item)
+        self.assertEqual((self.closed, self.minimized), ([4, 5], [4, 5]))
+
+    def test_own_icons_for_the_system_apps_and_the_default_dock_has_no_kde_apps(self):
+        self.assertEqual(DockItem(desktop_entry.DesktopEntry("foot.desktop", "Foot", "foot", "foot")).icon, "own:terminal")
+        self.assertEqual(DockItem(desktop_entry.DesktopEntry("x.desktop", "X", "", "x")).icon, "own:app")
+        self.assertEqual(DockItem(self.q).icon, "q")
+        for kde in ("org.kde.dolphin.desktop", "org.kde.konsole.desktop", "systemsettings.desktop"):
+            self.assertNotIn(kde, dock.DEFAULT_PINS)
+        icons = ROOT / "shell/quackshell/presentation/icons"
+        for name in set(dock.OWN_ICONS.values()) | {"app", "trash"}:
+            self.assertTrue((icons / f"{name}.svg").is_file(), name)
+
+    def test_save_pins_round_trips_through_the_user_file(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            env = {"XDG_CONFIG_HOME": tmp}
+            self.assertTrue(xdg.save_pins(["a.desktop", "b.desktop"], env))
+            self.assertEqual(xdg.user_pins(env), ["a.desktop", "b.desktop"])
+            self.assertFalse(xdg.save_pins(["x"], {"XDG_CONFIG_HOME": "/proc/definitely/not/writable"}))
+
+
+class QmlFilesTest(unittest.TestCase):
+    QML = ROOT / "shell/quackshell/presentation/qml"
+
+    def test_qmldir_lists_every_component_and_theme_is_a_singleton(self):
+        listed = {}
+        for line in (self.QML / "qmldir").read_text().splitlines():
+            tokens = line.split()
+            if tokens:
+                listed[tokens[1] if tokens[0] == "singleton" else tokens[0]] = line
+        for path in self.QML.glob("*.qml"):
+            if path.name.startswith("main_"):
+                continue
+            self.assertIn(path.stem, listed, f"{path.name} is missing from qmldir")
+        self.assertTrue(listed["Theme"].startswith("singleton"))
+        self.assertIn("pragma Singleton", (self.QML / "Theme.qml").read_text())
+
+    def test_both_window_sets_have_the_popup_layer_and_the_layer_one_has_the_fullscreen_strip(self):
+        layer = (self.QML / "main_layer.qml").read_text()
+        for needle in ("quackos-bar", "quackos-dock", "quackos-popups", "quackos-reveal", "LayerOverlay"):
+            self.assertIn(needle, layer)
+        self.assertIn("exclusionZone: -1", layer)            # the strip must sit on the very top edge, over the bar's space
+        self.assertIn("PopupLayer", (self.QML / "main_plain.qml").read_text())
+
+    def test_every_popup_the_bar_can_open_has_a_component(self):
+        layer = (self.QML / "PopupLayer.qml").read_text()
+        bar = (self.QML / "BarContent.qml").read_text() + (self.QML / "LogoMenu.qml").read_text() + (self.QML / "DockContent.qml").read_text()
+        import re as _re
+        opened = set(_re.findall(r'toggle\("([a-z-]+)"', bar)) | {"about", "confirm-poweroff", "confirm-reboot", "confirm-logout"}
+        for name in opened:
+            self.assertTrue(f'"{name}"' in layer or name.startswith("confirm-"), f"popup {name} is not handled by PopupLayer")
+
+    def test_labwc_green_button_is_full_screen_like_macos(self):
+        rc = (ROOT / "config/includes.chroot_after_packages/usr/share/quackos/labwc/rc.xml").read_text()
+        self.assertIn('<context name="Maximize">', rc)
+        self.assertIn("ToggleFullscreen", rc)
+        self.assertIn("quackos-screenshot", rc)
+        self.assertNotIn("dolphin", rc + (ROOT / "config/includes.chroot_after_packages/usr/share/quackos/labwc/menu.xml").read_text())
 
 
 class XdgTest(unittest.TestCase):

@@ -6,7 +6,8 @@ dbus-update-activation-environment --systemd WAYLAND_DISPLAY XDG_CURRENT_DESKTOP
 swaybg -i /usr/share/backgrounds/quackos/quackos.png -m fill >/dev/null 2>&1 &
 
 # the shell: top bar and dock
-quackos-shell >/dev/null 2>&1 &
+mkdir -p "$HOME/.cache"
+quackos-shell >"$HOME/.cache/quackos-shell.log" 2>&1 &
 
 # notifications (mako until the shell has its own notification daemon)
 mako >/dev/null 2>&1 &
