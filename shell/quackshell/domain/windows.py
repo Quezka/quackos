@@ -60,12 +60,26 @@ def group(windows, entries):
     return known, unknown
 
 
+def looks_like_a_script_name(text):
+    """True for things a client sent us that are a leftover script path, not a real app name: 'a.py', '__main__',
+    '__main__.py'. Seen for real: a window whose toolkit did not set an app_id or title defaulted to one of these,
+    and our bar showed it verbatim. Better to show nothing (the bar falls back to "QuackOS") than that. A real
+    title can coincidentally end in '.py' (a document called that), so anything with a space is left alone."""
+    if not text or " " in text:
+        return False
+    name = text.rsplit("/", 1)[-1]
+    return name in ("__main__", "__main__.py") or (name.endswith(".py") and name.count(".") == 1)
+
+
 def active_name(windows, entries):
     """What the bar shows next to the logo: the focused app's name, else its title or app_id, else ''."""
     for w in windows:
         if w.activated and not w.minimized:
             entry = entry_for(w.app_id, entries)
-            return entry.name if entry else (w.app_id or w.title)
+            if entry:
+                return entry.name
+            raw = w.app_id or w.title
+            return "" if looks_like_a_script_name(raw) else raw
     return ""
 
 

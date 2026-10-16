@@ -49,7 +49,8 @@ class DockService:
         for w in unknown:  # windows of apps we have no .desktop file for: one item per app_id
             by_app.setdefault(w.app_id or w.title, []).append(w)
         for key, ws in by_app.items():
-            out.append(DockItem(DesktopEntry(f"window:{key}", key or "?", ws[0].app_id, ""), tuple(ws), False))
+            name = "" if win.looks_like_a_script_name(key) else key
+            out.append(DockItem(DesktopEntry(f"window:{key}", name or "?", ws[0].app_id, ""), tuple(ws), False))
         return out
 
     def open(self, item):

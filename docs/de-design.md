@@ -104,3 +104,18 @@ Scoperte utili: labwc nasconde da solo le superfici `top` quando una finestra è
 **Ancora da fare:** Quack Files (file manager nostro) e Impostazioni nostre (ora pcmanfm-qt e il centro di controllo),
 Cestino nel dock, menu globale delle app, notifiche nostre, Mission Control, schermata di blocco nostra, tema scuro.
 **Da capire:** perché sul ThinkPad non si vedevano i pallini delle finestre (in QEMU ci sono): serve uno screenshot da lì.
+
+## dev5 (16 ottobre 2026, notte): funzionalità, non estetica
+
+Dal secondo giro di prove della dev4 sul ThinkPad vero: la barra non stava sopra a tutte le app, il file manager non
+si poteva muovere né ridimensionare, non si capiva se un'app si stava aprendo, le app Python della suite mostravano
+`__main__.py` nella barra, e la scala era troppo grande. Le prime quattro cose sono state trovate e verificate nella
+documentazione vera di labwc (uomo di pagina `labwc-config(5)`) e riprodotte in QEMU: `<margin>` (riserva statica,
+indipendente dai tempi di avvio della nostra shell Python), una `<windowRule serverDecoration="yes">` globale, il
+rimbalzo del dock a cicli infiniti invece che fissi, e un filtro per i nomi che sono chiaramente percorsi di script.
+La quinta (scala) viene dalla convenzione già in uso nel resto della suite (`quire/presentation/uiscale.py`, nota di
+memoria `small-screen-support`): sotto gli 800px di altezza tutto va all'85%, e la nostra shell non la seguiva.
+
+**Causa probabile di `__main__.py`, non toccata stanotte:** le finestre di avvio (splash) di Quire, Ligature, Gantry
+e Bivouac non impostano `setWindowTitle()` esplicito; è il sospetto più concreto, ma andrebbe corretto nei repo delle
+singole app, con una loro release, non qui. Il filtro aggiunto stanotte è solo una difesa lato nostro.

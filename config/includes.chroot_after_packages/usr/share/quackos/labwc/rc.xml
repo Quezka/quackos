@@ -6,6 +6,19 @@
     <gap>6</gap>
   </core>
 
+  <!-- Reserves space for the bar (top) and the dock (bottom) from the moment labwc starts, so a window that opens or
+       maximizes before our Python shell has finished booting (it takes a second or two) is never placed under them.
+       The dynamic layer-shell exclusion zone (set in main_layer.qml) does the same job once the shell is up; this is
+       the static fallback for the gap before that, and for any future panel that does not speak layer-shell. -->
+  <margin top="28" bottom="80" />
+
+  <!-- Some apps do not negotiate the xdg-decoration protocol and would otherwise open with no server titlebar/border
+       at all: no way to move or resize them. Force server decorations for everyone; <core><decoration> already
+       defaults to "server" but a window rule overrules per-window exceptions some toolkits ask for. -->
+  <windowRules>
+    <windowRule identifier="*" serverDecoration="yes" />
+  </windowRules>
+
   <theme>
     <name>QuackOS</name>
     <!-- macOS order: close, minimise, zoom on the left; the colon is mandatory -->

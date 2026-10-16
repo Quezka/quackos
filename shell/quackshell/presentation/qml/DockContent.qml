@@ -54,7 +54,11 @@ Item {
                     id: lift
                     anchors.fill: parent
                     SequentialAnimation on y {
-                        running: cell.bouncing; loops: 4
+                        // keeps bouncing until the window actually maps (onRunningChanged below) or the safety
+                        // timer gives up: some apps (ours included, with a splash screen) take well over a second
+                        // to open, and a fixed loop count used to stop the bounce long before they were ready,
+                        // leaving no sign anything was happening.
+                        running: cell.bouncing; loops: Animation.Infinite
                         NumberAnimation { to: -22; duration: 210; easing.type: Easing.OutQuad }
                         NumberAnimation { to: 0; duration: 210; easing.type: Easing.InQuad }
                     }

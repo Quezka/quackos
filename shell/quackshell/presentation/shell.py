@@ -15,6 +15,7 @@ from ..infra import process, system as sysinfra, xdg
 from .models import DockModel, Launcher, ThemeIcons
 from .state import ShellState
 from .system import SystemModel
+from .uiscale import apply_before_app
 from .windows import WindowWatcher
 
 QML = Path(__file__).parent / "qml"
@@ -48,6 +49,7 @@ def _detached(argv):
 
 
 def main(argv=None):
+    apply_before_app()  # must run before any Qt object exists
     layer = layer_shell_available()
     if layer:
         os.environ["QT_WAYLAND_SHELL_INTEGRATION"] = "layer-shell"  # must be set before the app exists

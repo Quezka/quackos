@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.0-dev5] - 2026-10-16 (local test build, not released)
+
+From the author's second round of dev4 feedback (functionality, not looks):
+- Fix: a window opened or maximized before quackos-shell finished starting (it is Python/Qt, a second or two) could
+  end up covering the bar permanently, because only the shell's own layer-shell exclusion zone reserved that space,
+  and it is not there yet at that point. `<margin>` now reserves the bar's and the dock's space from the moment
+  labwc itself starts, regardless of when the shell is ready.
+- Fix: apps that never ask for a server-side titlebar (seen: the file manager) opened with none at all — no way to
+  move or resize them. A window rule now forces server decorations for every app.
+- Fix: the dock's "I'm opening" bounce stopped after a fixed number of loops (~1.7 s), well before a slower app (the
+  suite's own Python apps, which show a splash) had actually opened a window: nothing told you it was still loading.
+  It now bounces until the window appears (or a 6 s safety timeout).
+- Fix: when a window reports a leftover script path as its name instead of a real one (seen: "__main__.py" on the
+  bar for a suite app) the bar and dock now show nothing/"?" instead of that text verbatim.
+- Fix: quackos-shell did not follow the suite's own small-screen rule (screens up to 800 px tall, like this laptop's
+  1366x768, get everything at 85%): every other app already shrinks itself, so the shell looked oversized next to
+  them. It now applies the same rule.
+
 ## [0.2.0-dev4] - 2026-10-16 (local test build, not released)
 
 From the author's test of dev3 on the ThinkPad:

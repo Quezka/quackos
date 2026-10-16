@@ -1,5 +1,6 @@
 """Tests of the desktop shell (shell/quackshell): the pure layers run anywhere; the Qt smoke test only where PySide6 is."""
 import os
+import re
 import subprocess
 import sys
 import tempfile
@@ -377,12 +378,92 @@ class QmlFilesTest(unittest.TestCase):
         for name in opened:
             self.assertTrue(f'"{name}"' in layer or name.startswith("confirm-"), f"popup {name} is not handled by PopupLayer")
 
+    def test_margin_reserves_the_bar_and_dock_space_before_the_shell_starts(self):
+        """A window maximized or placed before quackos-shell (Python/Qt) finishes starting must still avoid the bar
+        and dock: <margin> is a static reservation labwc applies from its own start, unlike the dynamic layer-shell
+        exclusion zone our shell sets once it is up (seconds later)."""
+        rc = (ROOT / "config/includes.chroot_after_packages/usr/share/quackos/labwc/rc.xml").read_text()
+        m = re.search(r'<margin\s+([^/]+)/>', rc)
+        self.assertIsNotNone(m, "no <margin> element in rc.xml")
+        attrs = dict(re.findall(r'(\w+)="(\d+)"', m.group(1)))
+        self.assertEqual(attrs.get("top"), "28")     # Theme.barHeight
+        self.assertEqual(attrs.get("bottom"), "80")  # Theme.dockIcon (52) + its own margin (28)
+
+    def test_server_decoration_is_forced_for_apps_that_do_not_negotiate_it(self):
+        """Some apps (seen: the file manager) never ask for a server titlebar/border and open with none at all:
+        no way to move or resize them. A window rule overrules that, regardless of the app."""
+        rc = (ROOT / "config/includes.chroot_after_packages/usr/share/quackos/labwc/rc.xml").read_text()
+        self.assertIn('<windowRules>', rc)
+        self.assertIn('serverDecoration="yes"', rc)
+
+    def test_dock_bounce_keeps_going_until_the_window_actually_opens(self):
+        """A fixed loop count used to stop the bounce (~1.7 s) well before apps with their own start-up delay (the
+        suite's Python apps show a splash for longer than that) ever opened a window: nothing told you it was loading."""
+        dock = (ROOT / "shell/quackshell/presentation/qml/DockContent.qml").read_text()
+        self.assertIn("loops: Animation.Infinite", dock)
+        self.assertNotRegex(dock, r"loops:\s*\d")   # no fixed count left for the bounce
+
     def test_labwc_green_button_is_full_screen_like_macos(self):
         rc = (ROOT / "config/includes.chroot_after_packages/usr/share/quackos/labwc/rc.xml").read_text()
         self.assertIn('<context name="Maximize">', rc)
         self.assertIn("ToggleFullscreen", rc)
         self.assertIn("quackos-screenshot", rc)
         self.assertNotIn("dolphin", rc + (ROOT / "config/includes.chroot_after_packages/usr/share/quackos/labwc/menu.xml").read_text())
+
+
+class ScriptNameFilterTest(unittest.TestCase):
+    """Some toolkit, for some window, reports a leftover script path instead of a real name (seen: "__main__.py"
+    on the bar when a suite app was focused). Our own fallbacks must never show that verbatim."""
+
+    def test_recognises_script_leftovers(self):
+        for bad in ("__main__.py", "__main__", "a.py", "/opt/quire/quire/__main__.py", "run.py"):
+            self.assertTrue(win.looks_like_a_script_name(bad), bad)
+
+    def test_leaves_real_app_ids_and_titles_alone(self):
+        for good in ("io.github.quezka.Quire", "firefox", "firefox-esr", "org.kde.dolphin", "A note about export.py"):
+            self.assertFalse(win.looks_like_a_script_name(good), good)
+
+    def test_active_name_hides_a_script_leftover_instead_of_showing_it(self):
+        self.assertEqual(win.active_name([win.Window(1, app_id="__main__.py", activated=True)], []), "")
+        self.assertEqual(win.active_name([win.Window(1, app_id="firefox", activated=True)], []), "firefox")
+
+    def test_dock_hides_it_too_for_an_app_with_no_desktop_file(self):
+        svc = DockService(lambda: {}, lambda: [], lambda e: None)
+        items = svc.items([win.Window(1, app_id="__main__.py")])
+        self.assertEqual(items[0].entry.name, "?")
+
+
+class UiScaleTest(unittest.TestCase):
+    """The same small-screen rule as the rest of the suite (quire/presentation/uiscale.py): screens up to 800 px
+    tall (the laptop is 1366x768) get everything at 85%. Before this, the shell was the only app in the suite at
+    100% on that screen, next to every other app already shrunk — it looked oversized by comparison."""
+
+    def test_matches_the_threshold_used_by_the_rest_of_the_suite(self):
+        from quackshell.presentation import uiscale
+        self.assertEqual(uiscale.AUTO_BELOW, 800)
+        self.assertEqual(uiscale.SMALL, 0.85)
+
+    def test_factor(self):
+        from quackshell.presentation import uiscale
+        self.assertEqual(uiscale.factor(768), 0.85)
+        self.assertEqual(uiscale.factor(800), 0.85)
+        self.assertEqual(uiscale.factor(801), 1.0)
+        self.assertEqual(uiscale.factor(1080), 1.0)
+        self.assertEqual(uiscale.factor(None), 1.0)
+
+    def test_apply_before_app_sets_the_env_var_only_when_needed_and_never_overrides_it(self):
+        from quackshell.presentation import uiscale
+        env = {}
+        uiscale.apply_before_app(env)                   # no Qt in this test process: _screen_height() returns None
+        self.assertNotIn("QT_SCALE_FACTOR", env)
+        env = {"QT_SCALE_FACTOR": "1.2"}
+        uiscale.apply_before_app(env)
+        self.assertEqual(env["QT_SCALE_FACTOR"], "1.2")  # an explicit choice is never overridden
+
+    def test_wired_into_startup_before_any_qt_object_exists(self):
+        shell = (ROOT / "shell/quackshell/presentation/shell.py").read_text()
+        self.assertIn("apply_before_app()", shell)
+        self.assertLess(shell.index("apply_before_app()"), shell.index("QGuiApplication("))
 
 
 class XdgTest(unittest.TestCase):
